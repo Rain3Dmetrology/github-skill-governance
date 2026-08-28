@@ -1,0 +1,40 @@
+schema_version: 1
+claims:
+  - id: claim.independent-rewrite-policy
+    kind: governance
+    status: implemented
+    evidence:
+      - LICENSE
+      - THIRD_PARTY_NOTICES.md
+      - docs/provenance/P0_SOURCE_LOG.md
+      - docs/adr/0001-open-source-license-and-independent-rewrite.md
+
+  - id: claim.release-authority-frozen
+    kind: governance
+    status: implemented
+    evidence:
+      - .github/governance/repo-policy.yaml
+      - docs/adr/0002-version-and-release-authority.md
+
+  - id: claim.readme-contract-frozen
+    kind: governance
+    status: implemented
+    evidence:
+      - .github/governance/readme-contract.json
+      - docs/adr/0003-bilingual-readme-contract.md
+      - README.md
+      - README.zh-CN.md
+
+  - id: claim.permission-boundaries-frozen
+    kind: governance
+    status: implemented
+    evidence:
+      - .github/governance/repo-policy.yaml
+      - docs/adr/0004-rwc-permission-boundaries.md
+
+  - id: claim.p0-alternatives-comparison
+    kind: comparative
+    status: implemented
+    verified_at: 2026-08-29
+    evidence:
+      - docs/comparisons/P0_ALTERNATIVES.md

@@ -1,0 +1,26 @@
+# Operating systems and editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.tmp
+
+# Local runtime state
+.local/
+.cache/
+tmp/
+
+# Secrets and credentials
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+credentials.json
+secrets.json
+
+# Generated reports
+reports/

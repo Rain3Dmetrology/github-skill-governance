@@ -1,0 +1,137 @@
+# GitHub Skill 治理
+
+<!-- readme-contract:section:language-switch -->
+[English](./README.md) | 简体中文
+<!-- /readme-contract:section:language-switch -->
+
+<!-- readme-contract:section:value-proposition -->
+用明确权限、证据化文档和可恢复发布路径治理可复用智能体 Skill。
+<!-- /readme-contract:section:value-proposition -->
+
+> 当前状态：**P0 治理基线**。本仓库尚未运行 CI、发布 Release、安装
+> Skill，也没有授予任何智能体发布权限。
+
+<!-- readme-contract:section:why-this-repo -->
+## 为什么选择这个仓库
+
+单体提示词会把指令、GitHub 写操作、版本决策和发布命令混在一起。本仓库把
+人类承诺、确定性检查和智能体辅助分开，使后续每项自动化都能被测试、审计
+和撤销。
+
+<!-- readme-contract:claim:claim.independent-rewrite-policy -->
+P0 基线是采用独立重写策略的新 Apache-2.0 仓库。来源日志记录了输入与排除
+范围；这不是法律意义上的正式 clean-room 认证。
+
+<!-- readme-contract:claim:claim.release-authority-frozen -->
+版本与发布权威冻结为未来唯一的 `release-please`；P0 阶段明确禁用。
+
+<!-- readme-contract:claim:claim.readme-contract-frozen -->
+英文和简体中文 README 共享稳定的 section ID 与 claim ID，而不是强制逐句直译。
+
+<!-- readme-contract:claim:claim.permission-boundaries-frozen -->
+仓库操作分为只读 R、可逆写 W 和外部承诺 C；智能体默认没有 C 权限。
+<!-- /readme-contract:section:why-this-repo -->
+
+<!-- readme-contract:section:quick-start -->
+## 快速开始
+
+P0 是治理审核，不是安装器：
+
+```text
+1. 阅读 .github/governance/repo-policy.yaml
+2. 审核 docs/adr/0001 至 0004
+3. 比较 README.md 与 README.zh-CN.md 的 section/claim ID
+4. 确认 docs/P0_ACCEPTANCE.md 中的每个 P0 项目
+```
+
+不要从该基线安装 AI 审查器或启用发布自动化。
+<!-- /readme-contract:section:quick-start -->
+
+<!-- readme-contract:section:comparison-and-tradeoffs -->
+## 对比与取舍
+
+<!-- readme-contract:claim:claim.p0-alternatives-comparison -->
+评估日期：**2026-08-29**。这是范围与架构对比，不是性能基准测试。
+
+| 方案 | 适合选择的条件 | 不该选择的条件 | 当前取舍 | 证据 |
+|---|---|---|---|---|
+| 本 P0 治理基线 | 需要先冻结许可证、发布权威、双语 README 和权限契约 | 今天就需要已强制执行的 CI Gate 或可用发布路径 | 边界现在可审核；强制机制尚未交付 | [P0 策略与验收](./docs/comparisons/P0_ALTERNATIVES.md#this-p0-baseline) |
+| 人工监督的单体发布提示词 | 可信维护者需要人工监督的检查清单，并接受其仓库许可证 | 需要 OSI 开源核心、确定性 Gate 或已验证多宿主使用 | 配置更少；策略与写命令仍处于同一指令面 | [已审查旧仓快照](./docs/comparisons/P0_ALTERNATIVES.md#legacy-release-prompt) |
+| 每个智能体的非托管副本 | 内容临时且不需要共享期望状态 | 必须跨宿主复现或审计同一 revision | 无中央配置；每个操作者自行跟踪版本并协调收敛 | [对比范围定义](./docs/comparisons/P0_ALTERNATIVES.md#unmanaged-per-agent-copies) |
+
+旧 `github-release-management` 仓库只作为需求和失败场景参考，不作为依赖或
+生产发布执行器。
+<!-- /readme-contract:section:comparison-and-tradeoffs -->
+
+<!-- readme-contract:section:current-limitations -->
+## 当前限制
+
+| 限制 | 对用户的影响 |
+|---|---|
+| P0 只有策略和文档 | 目前没有自动 Gate 阻止错误 PR |
+| 发布自动化被禁用 | 尚无受支持的 tag 或 GitHub Release 路径 |
+| 没有宿主 adapter 与 smoke test | 当前不声称已验证任何智能体平台 |
+| P0 尚未配置 GitHub Rulesets | 策略已冻结，但平台尚未强制执行 |
+<!-- /readme-contract:section:current-limitations -->
+
+<!-- readme-contract:section:mitigations -->
+## 弥补措施
+
+| 限制 | 立即措施 | 永久方案 | 状态 |
+|---|---|---|---|
+| 没有自动 Gate | 所有 P0 文件人工审核 | P1 Rulesets 与确定性检查 | 未开始 |
+| 没有发布路径 | 不创建 tag 或 Release | P5 Draft-first 发布 Saga | 策略禁用 |
+| 没有已验证宿主 | 不声明平台兼容性 | P6 exact-SHA 双宿主 canary | 未开始 |
+| 没有平台分支保护 | bootstrap 后避免直接 push | P1 required checks 与 CODEOWNERS | 未开始 |
+
+后续功能在实施前必须先建立 GitHub Issue；在此之前不会包装成已交付能力。
+<!-- /readme-contract:section:mitigations -->
+
+<!-- readme-contract:section:compatibility -->
+## 兼容性
+
+P0 不验证任何运行时或智能体宿主。未来包格式采用开放 Agent Skills 目录约定，
+但兼容性声明必须有固定 revision 的安装结果和 smoke-test 回执。
+<!-- /readme-contract:section:compatibility -->
+
+<!-- readme-contract:section:evidence -->
+## 证据
+
+| Claim ID | 证据 |
+|---|---|
+| `claim.independent-rewrite-policy` | `LICENSE`、`THIRD_PARTY_NOTICES.md`、`P0_SOURCE_LOG.md`、ADR-0001 |
+| `claim.release-authority-frozen` | `repo-policy.yaml`、ADR-0002 |
+| `claim.readme-contract-frozen` | `readme-contract.json`、ADR-0003、两份 README |
+| `claim.permission-boundaries-frozen` | `repo-policy.yaml`、ADR-0004 |
+| `claim.p0-alternatives-comparison` | `P0_ALTERNATIVES.md`，评估于 2026-08-29 |
+
+机器可读声明映射位于 [`docs/claims.yaml`](./docs/claims.yaml)。
+<!-- /readme-contract:section:evidence -->
+
+<!-- readme-contract:section:roadmap -->
+## 路线图
+
+| 阶段 | 进入条件 | 进入下一阶段前必须得到的结果 |
+|---|---|---|
+| P0 | 已授权仓库 bootstrap | 许可证、版本权威、README 契约和 R/W/C 权限冻结 |
+| P1 | P0 验收 | GitHub 平台强制与最小权限检查 |
+| P2 | P1 已强制 | 确定性 README、发布状态和分发校验器 |
+| P3+ | 上一阶段证据存在 | Core Skills、Draft 发布 Saga、双宿主 canary |
+
+当前只有 P0。后续阶段是决策 Gate，不是交付声明。
+<!-- /readme-contract:section:roadmap -->
+
+<!-- readme-contract:section:security -->
+## 安全
+
+禁止提交凭据、客户私密名称、内部路径或生产 Token。参见
+[`SECURITY.md`](./SECURITY.md)。P0 没有给智能体 merge、tag、Release、
+Ruleset、Secret 或生产部署权限。
+<!-- /readme-contract:section:security -->
+
+<!-- readme-contract:section:license -->
+## 许可证
+
+Apache License 2.0。参见 [`LICENSE`](./LICENSE) 和
+[`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md)。
+<!-- /readme-contract:section:license -->

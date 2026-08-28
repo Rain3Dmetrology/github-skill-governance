@@ -1,0 +1,100 @@
+schema_version: 1
+policy_status: frozen-p0
+frozen_at: 2026-08-29
+
+repository:
+  owner: Rain3Dmetrology
+  name: github-skill-governance
+  visibility: public
+  profile: public-skill-governance
+  default_branch: main
+
+license:
+  spdx: Apache-2.0
+  source_reuse_policy: independent-rewrite
+  clean_room_assurance: policy-established-not-formal-legal-proof
+  third_party_notices_required: true
+  legacy_repository:
+    url: https://github.com/Rain3Dmetrology/github-release-management
+    reuse_mode: ideas-and-failure-scenarios-only
+    text_or_code_copy_allowed: false
+
+public_api:
+  definition:
+    - skill names, triggers, and promised behavior
+    - script commands, arguments, structured output, and exit codes
+    - governance schemas and required fields
+    - supported host capabilities and installation contracts
+    - README claims marked as implemented
+
+release:
+  current_state: disabled-until-p5
+  version_authority: release-please
+  release_owner_count: 1
+  release_please_enabled: false
+  direct_default_branch_commit: forbidden-after-bootstrap
+  local_git_tag: forbidden
+  git_push_all_tags: forbidden
+  direct_gh_release_create: forbidden
+  gh_skill_publish_tag: forbidden
+  gh_skill_publish_dry_run: allowed-after-p3
+  existing_release_skill_write_access: forbidden
+
+readme:
+  primary_locale: en
+  files:
+    en: README.md
+    zh-CN: README.zh-CN.md
+  contract: .github/governance/readme-contract.json
+  machine_checks:
+    - reciprocal-language-links
+    - required-section-parity
+    - claim-id-parity
+    - claim-evidence
+    - local-links
+  human_checks:
+    - semantic-equivalence
+    - value-proposition
+    - fair-comparison
+    - limitations-and-mitigation
+
+permissions:
+  R:
+    description: read-only analysis with no shared-state changes
+    allowed_by_default: true
+    examples:
+      - inspect repository files and diffs
+      - read GitHub checks and logs
+      - produce local audit reports
+  W:
+    description: reversible and reviewable writes
+    allowed_by_default: false
+    requires:
+      - task-scoped user authorization or repository policy
+      - complete audit record
+    examples:
+      - create a draft pull request
+      - create a draft issue
+      - write a local patch
+  C:
+    description: external commitment or permission-sensitive change
+    allowed_for_agents_by_default: false
+    delegable_per_action: true
+    requires:
+      - explicit human authorization adjacent to the action
+      - deterministic preflight evidence
+    examples:
+      - create or change the visibility of a public repository
+      - merge a pull request
+      - create or move a tag
+      - publish a release
+      - change rulesets, secrets, or permissions
+      - deploy to a production environment
+
+automation:
+  ai_pr_reviewers_enabled: false
+  agentic_workflows_enabled: false
+  automated_merge_enabled: false
+  automated_release_enabled: false
+  automated_ruleset_changes_enabled: false
+  automated_secret_changes_enabled: false

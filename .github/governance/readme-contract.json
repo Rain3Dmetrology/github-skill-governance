@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "status": "frozen-p0",
+  "primaryLocale": "en",
+  "locales": {
+    "en": "README.md",
+    "zh-CN": "README.zh-CN.md"
+  },
+  "requiredSections": [
+    "language-switch",
+    "value-proposition",
+    "why-this-repo",
+    "quick-start",
+    "comparison-and-tradeoffs",
+    "current-limitations",
+    "mitigations",
+    "compatibility",
+    "evidence",
+    "roadmap",
+    "security",
+    "license"
+  ],
+  "policies": {
+    "reciprocalLanguageLinksRequired": true,
+    "sectionIdParityRequired": true,
+    "claimIdParityRequired": true,
+    "implementedClaimRequiresEvidence": true,
+    "plannedClaimRequiresIssue": true,
+    "comparativeClaimRequiresEvidenceAndDate": true,
+    "quantitativeClaimRequiresReproducibleBenchmark": true,
+    "absoluteSuperlativesRequireEvidence": true,
+    "internalLinksBlocking": true,
+    "externalLinksBlocking": false,
+    "semanticReviewOwnerRequired": true
+  },
+  "style": {
+    "valueSentenceWithinFirstNonEmptyLines": 12,
+    "englishValueSentenceMaxWords": 25,
+    "chineseValueSentenceMaxCharacters": 45
+  },
+  "allowedClaimStatuses": [
+    "implemented",
+    "in-progress",
+    "planned",
+    "rejected"
+  ]
+}

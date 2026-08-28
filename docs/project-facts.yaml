@@ -1,0 +1,21 @@
+schema_version: 1
+project:
+  name: GitHub Skill Governance
+  slug: github-skill-governance
+  owner: Rain3Dmetrology
+  repository: https://github.com/Rain3Dmetrology/github-skill-governance
+  status: p0-governance-only
+  default_locale: en
+
+value_proposition:
+  en: Govern reusable agent skills with explicit permissions, evidence-backed documentation, and a release path that cannot be mistaken for a prompt.
+  zh-CN: 用明确权限、证据化文档和可恢复发布路径治理可复用智能体 Skill。
+
+current_capabilities:
+  license_and_independent_rewrite_policy: implemented
+  version_authority_decision: implemented
+  bilingual_readme_contract: implemented
+  permission_boundary_contract: implemented
+  deterministic_ci_gates: not-implemented
+  release_automation: disabled
+  host_distribution: not-implemented
