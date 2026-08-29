@@ -20,11 +20,20 @@
 
 ## Remote evidence
 
-- [ ] Public GitHub repository created under `Rain3Dmetrology`.
-- [ ] Default branch points to the reviewed P0 bootstrap commit.
-- [ ] GitHub detects Apache-2.0 or the repository metadata reports the license.
-- [ ] Repository contains no tag, Release, Actions workflow, deploy key, or agent publisher.
-- [ ] P0 tracking issues exist before P1 work begins.
+- Verified at: `2026-08-29T03:12:24Z`
+- GitHub repository ID: `1350230486`
+- Bootstrap commit: `3aa45680156bcd61b0ee04ff547595e3125270a9`
+
+- [x] Public GitHub repository created under `Rain3Dmetrology`.
+- [x] Default branch contains the reviewed P0 bootstrap commit as its root.
+- [x] GitHub reports `Apache License 2.0` with key `apache-2.0`.
+- [x] Repository reports 0 tag, 0 Release, 0 Actions workflow, 0 deploy key,
+  and 0 Ruleset at verification time.
+- [x] The legacy release Skill remains unconfigured and receives no permission
+  from this repository.
+- [x] P1 tracking issues exist before P1 work begins:
+  [least-privilege preflight #1](https://github.com/Rain3Dmetrology/github-skill-governance/issues/1)
+  and [Rulesets/CODEOWNERS #2](https://github.com/Rain3Dmetrology/github-skill-governance/issues/2).
 
 P0 is locally complete only when all local evidence passes. It is remotely
 complete only when every remote item is verified from GitHub.
