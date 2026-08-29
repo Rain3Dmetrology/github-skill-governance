@@ -15,6 +15,7 @@ claims:
     evidence:
       - .github/governance/repo-policy.yaml
       - docs/adr/0002-version-and-release-authority.md
+      - docs/adr/0005-active-and-delegated-authority.md
 
   - id: claim.readme-contract-frozen
     kind: governance
@@ -30,7 +31,10 @@ claims:
     status: implemented
     evidence:
       - .github/governance/repo-policy.yaml
+      - .github/governance/owners.yaml
       - docs/adr/0004-rwc-permission-boundaries.md
+      - docs/adr/0005-active-and-delegated-authority.md
+      - docs/adr/0006-normalized-permission-schema.md
 
   - id: claim.p0-alternatives-comparison
     kind: comparative

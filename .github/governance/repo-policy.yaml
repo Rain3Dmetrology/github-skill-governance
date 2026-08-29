@@ -1,5 +1,5 @@
-schema_version: 1
-policy_status: frozen-p0
+schema_version: 2
+policy_status: frozen-p0-corrected
 frozen_at: 2026-08-29
 
 repository:
@@ -29,8 +29,12 @@ public_api:
 
 release:
   current_state: disabled-until-p5
-  version_authority: release-please
-  release_owner_count: 1
+  active_version_authority: null
+  active_release_authority: null
+  planned_version_and_release_authority: release-please
+  planned_activation_gate: P5
+  accountable_human_maintainer: Rain3Dmetrology
+  active_automated_release_owner_count: 0
   release_please_enabled: false
   direct_default_branch_commit: forbidden-after-bootstrap
   local_git_tag: forbidden
@@ -61,25 +65,28 @@ readme:
 permissions:
   R:
     description: read-only analysis with no shared-state changes
-    allowed_by_default: true
+    default_decision: allow
+    delegation_mode: standing
+    requires: []
     examples:
       - inspect repository files and diffs
       - read GitHub checks and logs
-      - produce local audit reports
+      - return audit findings without writing a file
   W:
     description: reversible and reviewable writes
-    allowed_by_default: false
+    default_decision: deny
+    delegation_mode: task-scoped
     requires:
       - task-scoped user authorization or repository policy
       - complete audit record
     examples:
       - create a draft pull request
-      - create a draft issue
+      - create an issue
       - write a local patch
   C:
     description: external commitment or permission-sensitive change
-    allowed_for_agents_by_default: false
-    delegable_per_action: true
+    default_decision: deny
+    delegation_mode: per-action
     requires:
       - explicit human authorization adjacent to the action
       - deterministic preflight evidence
@@ -90,6 +97,13 @@ permissions:
       - publish a release
       - change rulesets, secrets, or permissions
       - deploy to a production environment
+
+credential_and_authority:
+  raw_credentials_in_repository: forbidden
+  raw_credentials_in_skill: forbidden
+  technical_capability_counts_as_delegated_authority: false
+  standing_skill_write_authority: false
+  standing_skill_commitment_authority: false
 
 automation:
   ai_pr_reviewers_enabled: false
