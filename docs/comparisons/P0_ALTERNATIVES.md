@@ -15,7 +15,8 @@ Evidence in the current reviewed tree:
 - `.github/governance/repo-policy.yaml` freezes license, release authority,
   README rules, and R/W/C permissions.
 - `docs/P0_ACCEPTANCE.md` distinguishes local evidence from remote evidence.
-- `docs/adr/0001` through `0004` record the four accepted decisions.
+- `docs/adr/0001` through `0006` record the accepted baseline and correction
+  decisions.
 - No workflow, runtime script, tag, Release, host adapter, or automated gate is
   present in P0.
 

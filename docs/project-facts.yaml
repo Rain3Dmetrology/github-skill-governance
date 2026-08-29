@@ -8,8 +8,8 @@ project:
   default_locale: en
 
 value_proposition:
-  en: Govern reusable agent skills with explicit permissions, evidence-backed documentation, and a release path that cannot be mistaken for a prompt.
-  zh-CN: 用明确权限、证据化文档和可恢复发布路径治理可复用智能体 Skill。
+  en: Establish an auditable, bilingual governance baseline before any reusable agent Skill receives GitHub write or release authority.
+  zh-CN: 在智能体 Skill 获得 GitHub 写入或发布权前，先建立可审计的双语治理基线。
 
 current_capabilities:
   license_and_independent_rewrite_policy: implemented

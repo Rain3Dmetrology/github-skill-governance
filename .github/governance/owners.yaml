@@ -1,0 +1,19 @@
+schema_version: 1
+maintainer: Rain3Dmetrology
+
+semantic_review:
+  owner: Rain3Dmetrology
+  model: maintainer-self-review
+  independent_reviewer_required: false
+  limitation: single-maintainer repository; self-review is not independent review
+
+authority:
+  interactive_task_actor:
+    capability_may_exceed_delegated_scope: true
+    delegated_scope: current-task-and-action-only
+  all_skills:
+    standing_write_authority: false
+    standing_commitment_authority: false
+  legacy_release_skill:
+    delegated_write_authority: false
+    delegated_tag_or_release_authority: false

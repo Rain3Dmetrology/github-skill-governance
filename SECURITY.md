@@ -4,18 +4,21 @@
 
 This repository is in P0 and contains governance documents only. It does not
 hold deployment credentials, release credentials, GitHub App keys, production
-tokens, or write-capable automation.
+tokens, or write-capable automation. An interactive connector may have broader
+technical capability, but that capability is not standing authority delegated
+to a Skill.
 
 ## Report a vulnerability
 
 Do not disclose credentials or exploitable details in a public Issue.
 
-Once the GitHub repository is created, use GitHub Private Vulnerability
-Reporting when it is enabled. Until then, contact the repository owner through
-a private channel already known to you and reference only a non-sensitive
-tracking identifier in public.
+Use [GitHub Private Vulnerability Reporting](https://github.com/Rain3Dmetrology/github-skill-governance/security/advisories/new).
+The repository API returned `enabled: true` on 2026-08-29. If GitHub makes that
+route unavailable, contact the repository owner through a private channel
+already known to you and reference only a non-sensitive tracking identifier in
+public.
 
-P1 must enable or document the private reporting route before any executable
+P1 must verify that the private route remains enabled before any executable
 script or workflow is accepted.
 
 ## Sensitive data
@@ -32,5 +35,5 @@ Deleting the visible file is not sufficient.
 
 ## Permission boundary
 
-P0 grants agents no merge, tag, Release, Ruleset, Secret, or deployment
-permission. See ADR-0004 for the R/W/C model.
+P0 grants no Skill standing merge, tag, Release, Ruleset, Secret, or deployment
+authority. See ADR-0004 and ADR-0005 for the R/W/C and delegation models.

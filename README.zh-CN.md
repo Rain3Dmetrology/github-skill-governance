@@ -5,7 +5,7 @@
 <!-- /readme-contract:section:language-switch -->
 
 <!-- readme-contract:section:value-proposition -->
-用明确权限、证据化文档和可恢复发布路径治理可复用智能体 Skill。
+在智能体 Skill 获得 GitHub 写入或发布权前，先建立可审计的双语治理基线。
 <!-- /readme-contract:section:value-proposition -->
 
 > 当前状态：**P0 治理基线**。本仓库尚未运行 CI、发布 Release、安装
@@ -39,7 +39,7 @@ P0 是治理审核，不是安装器：
 
 ```text
 1. 阅读 .github/governance/repo-policy.yaml
-2. 审核 docs/adr/0001 至 0004
+2. 审核 docs/adr/0001 至 0006
 3. 比较 README.md 与 README.zh-CN.md 的 section/claim ID
 4. 确认 docs/P0_ACCEPTANCE.md 中的每个 P0 项目
 ```
@@ -100,9 +100,9 @@ P0 不验证任何运行时或智能体宿主。未来包格式采用开放 Agen
 | Claim ID | 证据 |
 |---|---|
 | `claim.independent-rewrite-policy` | `LICENSE`、`THIRD_PARTY_NOTICES.md`、`P0_SOURCE_LOG.md`、ADR-0001 |
-| `claim.release-authority-frozen` | `repo-policy.yaml`、ADR-0002 |
+| `claim.release-authority-frozen` | `repo-policy.yaml`、ADR-0002、ADR-0005 |
 | `claim.readme-contract-frozen` | `readme-contract.json`、ADR-0003、两份 README |
-| `claim.permission-boundaries-frozen` | `repo-policy.yaml`、ADR-0004 |
+| `claim.permission-boundaries-frozen` | `repo-policy.yaml`、`owners.yaml`、ADR-0004、ADR-0005、ADR-0006 |
 | `claim.p0-alternatives-comparison` | `P0_ALTERNATIVES.md`，评估于 2026-08-29 |
 
 机器可读声明映射位于 [`docs/claims.yaml`](./docs/claims.yaml)。
@@ -125,8 +125,9 @@ P0 不验证任何运行时或智能体宿主。未来包格式采用开放 Agen
 ## 安全
 
 禁止提交凭据、客户私密名称、内部路径或生产 Token。参见
-[`SECURITY.md`](./SECURITY.md)。P0 没有给智能体 merge、tag、Release、
-Ruleset、Secret 或生产部署权限。
+[`SECURITY.md`](./SECURITY.md)。P0 不向任何 Skill 委派常驻的 merge、tag、
+Release、Ruleset、Secret 或生产部署权限。经人类授权的任务执行者只能执行
+ADR-0005 明确限定的 C 类动作。
 <!-- /readme-contract:section:security -->
 
 <!-- readme-contract:section:license -->

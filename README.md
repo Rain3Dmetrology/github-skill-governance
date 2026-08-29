@@ -5,7 +5,8 @@ English | [简体中文](./README.zh-CN.md)
 <!-- /readme-contract:section:language-switch -->
 
 <!-- readme-contract:section:value-proposition -->
-Govern reusable agent skills with explicit permissions, evidence-backed documentation, and a release path that cannot be mistaken for a prompt.
+Establish an auditable, bilingual governance baseline before any reusable agent
+Skill receives GitHub write or release authority.
 <!-- /readme-contract:section:value-proposition -->
 
 > Status: **P0 governance baseline**. This repository does not yet run CI,
@@ -44,7 +45,7 @@ P0 is a governance review, not an installer:
 
 ```text
 1. Read .github/governance/repo-policy.yaml
-2. Review docs/adr/0001 through 0004
+2. Review docs/adr/0001 through 0006
 3. Compare README.md and README.zh-CN.md section/claim IDs
 4. Confirm every P0 item in docs/P0_ACCEPTANCE.md
 ```
@@ -108,9 +109,9 @@ exact-revision install and smoke-test receipt.
 | Claim ID | Evidence |
 |---|---|
 | `claim.independent-rewrite-policy` | `LICENSE`, `THIRD_PARTY_NOTICES.md`, `P0_SOURCE_LOG.md`, ADR-0001 |
-| `claim.release-authority-frozen` | `repo-policy.yaml`, ADR-0002 |
+| `claim.release-authority-frozen` | `repo-policy.yaml`, ADR-0002, ADR-0005 |
 | `claim.readme-contract-frozen` | `readme-contract.json`, ADR-0003, both README files |
-| `claim.permission-boundaries-frozen` | `repo-policy.yaml`, ADR-0004 |
+| `claim.permission-boundaries-frozen` | `repo-policy.yaml`, `owners.yaml`, ADR-0004, ADR-0005, ADR-0006 |
 | `claim.p0-alternatives-comparison` | `P0_ALTERNATIVES.md`, assessed 2026-08-29 |
 
 Machine-readable claim mapping lives in [`docs/claims.yaml`](./docs/claims.yaml).
@@ -133,8 +134,10 @@ Only P0 is current. Later phases are decision gates, not delivery claims.
 ## Security
 
 Do not submit credentials, private client names, internal paths, or production
-tokens. See [`SECURITY.md`](./SECURITY.md). P0 grants no agent merge, tag,
-release, Ruleset, Secret, or deployment permission.
+tokens. See [`SECURITY.md`](./SECURITY.md). P0 delegates no standing merge,
+tag, release, Ruleset, Secret, or deployment authority to any Skill. A human-
+authorized task actor may execute only the explicitly scoped C actions defined
+by ADR-0005.
 <!-- /readme-contract:section:security -->
 
 <!-- readme-contract:section:license -->
