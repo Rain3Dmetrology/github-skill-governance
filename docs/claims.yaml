@@ -36,9 +36,18 @@ claims:
       - docs/adr/0005-active-and-delegated-authority.md
       - docs/adr/0006-normalized-permission-schema.md
 
+  - id: claim.p1-platform-enforcement
+    kind: governance
+    status: implemented
+    evidence:
+      - .github/governance/repo-policy.yaml
+      - docs/P1_ACCEPTANCE.md
+      - docs/adr/0008-p1-platform-enforcement-accepted.md
+      - docs/evidence/P1_REMOTE_ACCEPTANCE_2026-08-30.md
+
   - id: claim.p0-alternatives-comparison
     kind: comparative
     status: implemented
-    verified_at: 2026-08-29
+    verified_at: 2026-08-30
     evidence:
       - docs/comparisons/P0_ALTERNATIVES.md

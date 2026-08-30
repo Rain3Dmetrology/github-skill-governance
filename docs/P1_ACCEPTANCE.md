@@ -3,8 +3,8 @@
 - Repository: `Rain3Dmetrology/github-skill-governance`
 - Issues: [#1](https://github.com/Rain3Dmetrology/github-skill-governance/issues/1),
   [#2](https://github.com/Rain3Dmetrology/github-skill-governance/issues/2)
-- State: in progress
-- Date: 2026-08-29
+- State: platform enforcement accepted; authorization broker residual open
+- Date: 2026-08-30
 
 ## Deterministic repository controls
 
@@ -44,16 +44,19 @@
 - [x] Only squash merge is enabled; auto-merge is disabled; merged branches are
   deleted; update-branch is enabled.
 - [x] Private Vulnerability Reporting returns `enabled: true`.
-- [ ] The `main` Ruleset is active with no bypass actor and its required check is
+- [x] The `main` Ruleset is active with no bypass actor and its required check is
   bound to the App ID observed on the target check run.
-- [ ] The all-tag (`~ALL`) Ruleset is active with no bypass actor and blocks
+- [x] The all-tag (`~ALL`) Ruleset is active with no bypass actor and blocks
   every tag creation, update, deletion, and non-fast-forward change until P5.
-- [ ] A safe negative PR produces a failed required check and blocked merge
+- [x] A safe negative PR produces a failed required check and blocked merge
   state, then is closed without merge.
-- [ ] GitHub still reports zero tag and zero Release.
+- [x] GitHub still reports zero tag and zero Release.
 
-P1 is complete only after every item is checked and the point-in-time remote
-receipt is linked here. Completion does not grant release authority.
+P1 platform enforcement is accepted because every deterministic and platform
+control above is checked and linked to point-in-time remote evidence. The
+unchecked C-authorization broker criterion is a deliberately unshipped
+capability tracked by Issue #1; no automated C executor may activate until it
+is solved. Platform acceptance does not grant release authority.
 
 ## Local candidate receipt
 
@@ -62,8 +65,8 @@ receipt is linked here. Completion does not grant release authority.
   local Action, extensionless release executor, credential, release-command,
   identity, repository-ID, SHA, permission, and shell-injection cases.
 - Live read-only preflight: account `Rain3Dmetrology`, repository ID
-  `1350230486`, default branch `main`, current activation target
-  `4388f987267fb6578c379975cdc0e079cbab9482`, observed permission `admin`.
+  `1350230486`, default branch `main`, activation target
+  `b9b929f8454fb1c94167c20c26a7ed63d1a7dd44`, observed permission `admin`.
 - The live preflight made four `GET` requests through argument-array
   `gh api` calls, performed no mutation, and explicitly returned
   `authorization_verified: false`.
@@ -82,3 +85,18 @@ receipt is linked here. Completion does not grant release authority.
   reviewed active payload before either Ruleset is activated.
 - Full point-in-time fields are recorded in
   [`P1_REMOTE_BOOTSTRAP_2026-08-30.md`](./evidence/P1_REMOTE_BOOTSTRAP_2026-08-30.md).
+
+## Remote enforcement receipt
+
+- The all-tag Ruleset `21839874` and main Ruleset `21839880` were activated in
+  that order and read back with zero bypass actors.
+- Effective `main` rules report PR-only updates, linear history, squash-only
+  merges, resolved review threads, deletion and non-fast-forward protection,
+  and strict `governance-baseline` binding to App ID `15368`.
+- Negative PR [#7](https://github.com/Rain3Dmetrology/github-skill-governance/pull/7)
+  produced a failed
+  [`governance-baseline`](https://github.com/Rain3Dmetrology/github-skill-governance/actions/runs/33307530927/job/99246603479)
+  and `mergeStateStatus: BLOCKED`, then closed without merge and deleted its
+  temporary branch.
+- The complete readback is in
+  [`P1_REMOTE_ACCEPTANCE_2026-08-30.md`](./evidence/P1_REMOTE_ACCEPTANCE_2026-08-30.md).

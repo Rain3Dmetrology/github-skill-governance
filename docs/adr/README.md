@@ -9,6 +9,7 @@
 | [0005](./0005-active-and-delegated-authority.md) | Separate active authority, delegated authority, and connector capability | Accepted |
 | [0006](./0006-normalized-permission-schema.md) | One fail-closed schema for R/W/C permissions | Accepted |
 | [0007](./0007-p1-deterministic-platform-enforcement.md) | Deterministic CI, preflight, and GitHub platform controls | Accepted |
+| [0008](./0008-p1-platform-enforcement-accepted.md) | P1 remote platform enforcement accepted with explicit residuals | Accepted |
 
 Accepted ADRs are immutable decisions. A later change creates a new ADR that
 supersedes the old one; it does not silently rewrite history.
