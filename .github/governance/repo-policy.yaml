@@ -1,6 +1,7 @@
 schema_version: 2
-policy_status: frozen-p0-corrected
-frozen_at: 2026-08-29
+policy_status: p1-in-progress
+frozen_at: "2026-08-29"
+p1_started_at: "2026-08-29"
 
 repository:
   owner: Rain3Dmetrology
@@ -112,3 +113,29 @@ automation:
   automated_release_enabled: false
   automated_ruleset_changes_enabled: false
   automated_secret_changes_enabled: false
+
+platform_enforcement:
+  phase: P1
+  current_state: pending-remote-activation
+  issues:
+    - 1
+    - 2
+  required_check: governance-baseline
+  codeowners: .github/CODEOWNERS
+  policy_schema: .github/governance/repo-policy.schema.json
+  actions:
+    allowed_external_uses:
+      - actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    local_actions_allowed: false
+    sha_pinning_required: true
+    default_workflow_permissions: read
+    can_approve_pull_request_reviews: false
+  rulesets:
+    main_desired_state: .github/governance/rulesets/main.json
+    all_tag_desired_state: .github/governance/rulesets/freeze-all-tags-until-p5.json
+    bypass_actor_count: 0
+    required_approving_review_count: 0
+    independent_approval_enforced: false
+    required_check_integration_id: null
+  vulnerability_reporting:
+    required: true

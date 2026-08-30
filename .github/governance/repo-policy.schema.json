@@ -1,0 +1,414 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Rain3Dmetrology/github-skill-governance/raw/main/.github/governance/repo-policy.schema.json",
+  "title": "GitHub Skill Governance Repository Policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "policy_status",
+    "frozen_at",
+    "p1_started_at",
+    "repository",
+    "license",
+    "public_api",
+    "release",
+    "readme",
+    "permissions",
+    "credential_and_authority",
+    "automation",
+    "platform_enforcement"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 2
+    },
+    "policy_status": {
+      "enum": [
+        "p1-in-progress",
+        "p1-enforced"
+      ]
+    },
+    "frozen_at": {
+      "type": "string",
+      "format": "date"
+    },
+    "p1_started_at": {
+      "type": "string",
+      "format": "date"
+    },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner",
+        "name",
+        "visibility",
+        "profile",
+        "default_branch"
+      ],
+      "properties": {
+        "owner": { "const": "Rain3Dmetrology" },
+        "name": { "const": "github-skill-governance" },
+        "visibility": { "const": "public" },
+        "profile": { "const": "public-skill-governance" },
+        "default_branch": { "const": "main" }
+      }
+    },
+    "license": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "spdx",
+        "source_reuse_policy",
+        "clean_room_assurance",
+        "third_party_notices_required",
+        "legacy_repository"
+      ],
+      "properties": {
+        "spdx": { "const": "Apache-2.0" },
+        "source_reuse_policy": { "const": "independent-rewrite" },
+        "clean_room_assurance": { "const": "policy-established-not-formal-legal-proof" },
+        "third_party_notices_required": { "const": true },
+        "legacy_repository": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "url",
+            "reuse_mode",
+            "text_or_code_copy_allowed"
+          ],
+          "properties": {
+            "url": { "const": "https://github.com/Rain3Dmetrology/github-release-management" },
+            "reuse_mode": { "const": "ideas-and-failure-scenarios-only" },
+            "text_or_code_copy_allowed": { "const": false }
+          }
+        }
+      }
+    },
+    "public_api": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["definition"],
+      "properties": {
+        "definition": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "current_state",
+        "active_version_authority",
+        "active_release_authority",
+        "planned_version_and_release_authority",
+        "planned_activation_gate",
+        "accountable_human_maintainer",
+        "active_automated_release_owner_count",
+        "release_please_enabled",
+        "direct_default_branch_commit",
+        "local_git_tag",
+        "git_push_all_tags",
+        "direct_gh_release_create",
+        "gh_skill_publish_tag",
+        "gh_skill_publish_dry_run",
+        "existing_release_skill_write_access"
+      ],
+      "properties": {
+        "current_state": { "const": "disabled-until-p5" },
+        "active_version_authority": { "type": "null" },
+        "active_release_authority": { "type": "null" },
+        "planned_version_and_release_authority": { "const": "release-please" },
+        "planned_activation_gate": { "const": "P5" },
+        "accountable_human_maintainer": { "const": "Rain3Dmetrology" },
+        "active_automated_release_owner_count": { "const": 0 },
+        "release_please_enabled": { "const": false },
+        "direct_default_branch_commit": { "const": "forbidden-after-bootstrap" },
+        "local_git_tag": { "const": "forbidden" },
+        "git_push_all_tags": { "const": "forbidden" },
+        "direct_gh_release_create": { "const": "forbidden" },
+        "gh_skill_publish_tag": { "const": "forbidden" },
+        "gh_skill_publish_dry_run": { "const": "allowed-after-p3" },
+        "existing_release_skill_write_access": { "const": "forbidden" }
+      }
+    },
+    "readme": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "primary_locale",
+        "files",
+        "contract",
+        "machine_checks",
+        "human_checks"
+      ],
+      "properties": {
+        "primary_locale": { "const": "en" },
+        "files": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["en", "zh-CN"],
+          "properties": {
+            "en": { "const": "README.md" },
+            "zh-CN": { "const": "README.zh-CN.md" }
+          }
+        },
+        "contract": { "const": ".github/governance/readme-contract.json" },
+        "machine_checks": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "human_checks": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "permissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["R", "W", "C"],
+      "properties": {
+        "R": { "$ref": "#/$defs/readPermission" },
+        "W": { "$ref": "#/$defs/writePermission" },
+        "C": { "$ref": "#/$defs/commitmentPermission" }
+      }
+    },
+    "credential_and_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "raw_credentials_in_repository",
+        "raw_credentials_in_skill",
+        "technical_capability_counts_as_delegated_authority",
+        "standing_skill_write_authority",
+        "standing_skill_commitment_authority"
+      ],
+      "properties": {
+        "raw_credentials_in_repository": { "const": "forbidden" },
+        "raw_credentials_in_skill": { "const": "forbidden" },
+        "technical_capability_counts_as_delegated_authority": { "const": false },
+        "standing_skill_write_authority": { "const": false },
+        "standing_skill_commitment_authority": { "const": false }
+      }
+    },
+    "automation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ai_pr_reviewers_enabled",
+        "agentic_workflows_enabled",
+        "automated_merge_enabled",
+        "automated_release_enabled",
+        "automated_ruleset_changes_enabled",
+        "automated_secret_changes_enabled"
+      ],
+      "properties": {
+        "ai_pr_reviewers_enabled": { "const": false },
+        "agentic_workflows_enabled": { "const": false },
+        "automated_merge_enabled": { "const": false },
+        "automated_release_enabled": { "const": false },
+        "automated_ruleset_changes_enabled": { "const": false },
+        "automated_secret_changes_enabled": { "const": false }
+      }
+    },
+    "platform_enforcement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "phase",
+        "current_state",
+        "issues",
+        "required_check",
+        "codeowners",
+        "policy_schema",
+        "actions",
+        "rulesets",
+        "vulnerability_reporting"
+      ],
+      "properties": {
+        "phase": { "const": "P1" },
+        "current_state": {
+          "enum": ["pending-remote-activation", "enforced"]
+        },
+        "issues": {
+          "const": [1, 2]
+        },
+        "required_check": { "const": "governance-baseline" },
+        "codeowners": { "const": ".github/CODEOWNERS" },
+        "policy_schema": { "const": ".github/governance/repo-policy.schema.json" },
+        "actions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "allowed_external_uses",
+            "local_actions_allowed",
+            "sha_pinning_required",
+            "default_workflow_permissions",
+            "can_approve_pull_request_reviews"
+          ],
+          "properties": {
+            "allowed_external_uses": {
+              "const": [
+                "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
+              ]
+            },
+            "local_actions_allowed": { "const": false },
+            "sha_pinning_required": { "const": true },
+            "default_workflow_permissions": { "const": "read" },
+            "can_approve_pull_request_reviews": { "const": false }
+          }
+        },
+        "rulesets": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "main_desired_state",
+            "all_tag_desired_state",
+            "bypass_actor_count",
+            "required_approving_review_count",
+            "independent_approval_enforced",
+            "required_check_integration_id"
+          ],
+          "properties": {
+            "main_desired_state": { "const": ".github/governance/rulesets/main.json" },
+            "all_tag_desired_state": { "const": ".github/governance/rulesets/freeze-all-tags-until-p5.json" },
+            "bypass_actor_count": { "const": 0 },
+            "required_approving_review_count": { "const": 0 },
+            "independent_approval_enforced": { "const": false },
+            "required_check_integration_id": {
+              "type": ["integer", "null"],
+              "minimum": 1
+            }
+          }
+        },
+        "vulnerability_reporting": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["required"],
+          "properties": {
+            "required": { "const": true }
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "policy_status": { "const": "p1-in-progress" }
+        }
+      },
+      "then": {
+        "properties": {
+          "platform_enforcement": {
+            "properties": {
+              "current_state": { "const": "pending-remote-activation" },
+              "rulesets": {
+                "properties": {
+                  "required_check_integration_id": { "type": "null" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "policy_status": { "const": "p1-enforced" }
+        }
+      },
+      "then": {
+        "properties": {
+          "platform_enforcement": {
+            "properties": {
+              "current_state": { "const": "enforced" },
+              "rulesets": {
+                "properties": {
+                  "required_check_integration_id": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "permissionBase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "description",
+        "default_decision",
+        "delegation_mode",
+        "requires",
+        "examples"
+      ],
+      "properties": {
+        "description": { "type": "string", "minLength": 1 },
+        "default_decision": { "enum": ["allow", "deny"] },
+        "delegation_mode": { "enum": ["standing", "task-scoped", "per-action"] },
+        "requires": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "examples": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "readPermission": {
+      "allOf": [
+        { "$ref": "#/$defs/permissionBase" },
+        {
+          "properties": {
+            "default_decision": { "const": "allow" },
+            "delegation_mode": { "const": "standing" }
+          }
+        }
+      ]
+    },
+    "writePermission": {
+      "allOf": [
+        { "$ref": "#/$defs/permissionBase" },
+        {
+          "properties": {
+            "default_decision": { "const": "deny" },
+            "delegation_mode": { "const": "task-scoped" }
+          }
+        }
+      ]
+    },
+    "commitmentPermission": {
+      "allOf": [
+        { "$ref": "#/$defs/permissionBase" },
+        {
+          "properties": {
+            "default_decision": { "const": "deny" },
+            "delegation_mode": { "const": "per-action" }
+          }
+        }
+      ]
+    }
+  }
+}

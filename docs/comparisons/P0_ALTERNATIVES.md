@@ -10,18 +10,22 @@ rank products or claim that one approach is universally better.
 
 ## This P0 baseline
 
-Evidence in the current reviewed tree:
+P0 remains the accepted foundation. The current P1 candidate adds reviewable
+enforcement artifacts without changing the P0 release boundary:
 
 - `.github/governance/repo-policy.yaml` freezes license, release authority,
   README rules, and R/W/C permissions.
 - `docs/P0_ACCEPTANCE.md` distinguishes local evidence from remote evidence.
 - `docs/adr/0001` through `0006` record the accepted baseline and correction
   decisions.
-- No workflow, runtime script, tag, Release, host adapter, or automated gate is
-  present in P0.
+- `scripts/`, `tests/`, CODEOWNERS, and one read-only workflow implement the P1
+  candidate; `docs/P1_ACCEPTANCE.md` prevents desired state from being reported
+  as active platform enforcement before remote receipts exist.
+- No tag, Release, host adapter, release credential, or publisher is present.
 
-Therefore this baseline can be selected for a reviewable governance starting
-point, but not for working CI enforcement or release automation today.
+Therefore this repository can be selected for a reviewable governance and
+enforcement path, but not for verified multi-host distribution or release
+automation today.
 
 ## Legacy release prompt
 
