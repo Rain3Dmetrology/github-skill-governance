@@ -18,6 +18,6 @@ current_capabilities:
   permission_boundary_contract: implemented
   deterministic_ci_gates: in-progress
   readonly_identity_preflight: in-progress
-  github_platform_enforcement: pending-remote-activation
+  github_platform_enforcement: ready-for-remote-activation
   release_automation: disabled
   host_distribution: not-implemented

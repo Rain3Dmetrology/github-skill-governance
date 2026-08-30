@@ -37,13 +37,13 @@
 
 ## GitHub platform enforcement
 
-- [ ] `governance-baseline` succeeds on the merged `main` revision.
-- [ ] Actions is `selected`, full-SHA pinning is required, and only the exact
+- [x] `governance-baseline` succeeds on the merged `main` revision.
+- [x] Actions is `selected`, full-SHA pinning is required, and only the exact
   checkout revision is allowed.
-- [ ] The default workflow token is read-only and cannot approve reviews.
-- [ ] Only squash merge is enabled; auto-merge is disabled; merged branches are
+- [x] The default workflow token is read-only and cannot approve reviews.
+- [x] Only squash merge is enabled; auto-merge is disabled; merged branches are
   deleted; update-branch is enabled.
-- [ ] Private Vulnerability Reporting returns `enabled: true`.
+- [x] Private Vulnerability Reporting returns `enabled: true`.
 - [ ] The `main` Ruleset is active with no bypass actor and its required check is
   bound to the App ID observed on the target check run.
 - [ ] The all-tag (`~ALL`) Ruleset is active with no bypass actor and blocks
@@ -57,13 +57,28 @@ receipt is linked here. Completion does not grant release authority.
 
 ## Local candidate receipt
 
-- Unit tests: 25 passed on Python 3.14, including negative policy-state,
+- Unit tests: 26 passed on Python 3.14, including negative policy-state,
   all-tag Ruleset, YAML-equivalent workflow rewrites, new permission scope,
   local Action, extensionless release executor, credential, release-command,
   identity, repository-ID, SHA, permission, and shell-injection cases.
 - Live read-only preflight: account `Rain3Dmetrology`, repository ID
-  `1350230486`, default branch `main`, target
-  `359bb44e4f5189993602c4ddbf16c512fdb31b18`, observed permission `admin`.
+  `1350230486`, default branch `main`, current activation target
+  `4388f987267fb6578c379975cdc0e079cbab9482`, observed permission `admin`.
 - The live preflight made four `GET` requests through argument-array
   `gh api` calls, performed no mutation, and explicitly returned
   `authorization_verified: false`.
+
+## Remote bootstrap receipt
+
+- PR [#5](https://github.com/Rain3Dmetrology/github-skill-governance/pull/5)
+  merged the bootstrap revision; its `push`-triggered `main` check
+  [`governance-baseline`](https://github.com/Rain3Dmetrology/github-skill-governance/actions/runs/33291774391/job/99204534886)
+  succeeded on `4388f987267fb6578c379975cdc0e079cbab9482` and reported
+  GitHub Actions App ID `15368`.
+- Actions and merge settings were read back at their least-privilege P1 values;
+  Private Vulnerability Reporting remained enabled.
+- Tag Ruleset `21839874` and main Ruleset `21839880` were created and read back
+  as `disabled`. This activation candidate records the observed App ID and the
+  reviewed active payload before either Ruleset is activated.
+- Full point-in-time fields are recorded in
+  [`P1_REMOTE_BOOTSTRAP_2026-08-30.md`](./evidence/P1_REMOTE_BOOTSTRAP_2026-08-30.md).

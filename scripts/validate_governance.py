@@ -262,8 +262,8 @@ def validate_policy(policy: Any, findings: list[Finding]) -> None:
         if not isinstance(policy, dict):
             return
     _expect(policy.get("schema_version"), 2, f"{POLICY_PATH}:schema_version", findings)
-    if policy.get("policy_status") not in {"p1-in-progress", "p1-enforced"}:
-        findings.append(Finding("policy-enum", POLICY_PATH, "policy_status must be p1-in-progress or p1-enforced"))
+    if policy.get("policy_status") not in {"p1-in-progress", "p1-activation-approved", "p1-enforced"}:
+        findings.append(Finding("policy-enum", POLICY_PATH, "policy_status has an unknown P1 transition state"))
     for date_field in ("frozen_at", "p1_started_at"):
         if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(policy.get(date_field, ""))):
             findings.append(Finding("policy-date", POLICY_PATH, f"{date_field} must be YYYY-MM-DD"))
@@ -366,7 +366,7 @@ def validate_policy(policy: Any, findings: list[Finding]) -> None:
 
     platform = policy.get("platform_enforcement") if isinstance(policy.get("platform_enforcement"), dict) else {}
     _expect(platform.get("phase"), "P1", f"{POLICY_PATH}:platform_enforcement.phase", findings)
-    if platform.get("current_state") not in {"pending-remote-activation", "enforced"}:
+    if platform.get("current_state") not in {"pending-remote-activation", "ready-for-remote-activation", "enforced"}:
         findings.append(Finding("policy-enum", f"{POLICY_PATH}:platform_enforcement.current_state", "unknown P1 enforcement state"))
     for key, expected in {
         "issues": [1, 2],
@@ -405,6 +405,10 @@ def validate_policy(policy: Any, findings: list[Finding]) -> None:
         if status == "p1-in-progress":
             _expect(state, "pending-remote-activation", f"{POLICY_PATH}:platform_enforcement.current_state", findings)
             _expect(integration_id, None, f"{POLICY_PATH}:platform_enforcement.rulesets.required_check_integration_id", findings)
+        elif status == "p1-activation-approved":
+            _expect(state, "ready-for-remote-activation", f"{POLICY_PATH}:platform_enforcement.current_state", findings)
+            if isinstance(integration_id, bool) or not isinstance(integration_id, int) or integration_id < 1:
+                findings.append(Finding("policy-state", f"{POLICY_PATH}:platform_enforcement.rulesets.required_check_integration_id", "p1-activation-approved requires the positive App integration ID observed on the target check run"))
         elif status == "p1-enforced":
             _expect(state, "enforced", f"{POLICY_PATH}:platform_enforcement.current_state", findings)
             if isinstance(integration_id, bool) or not isinstance(integration_id, int) or integration_id < 1:
@@ -427,11 +431,11 @@ def validate_rulesets(root: Path, policy: Any, findings: list[Finding]) -> None:
     if not isinstance(ruleset_policy, dict):
         return
     integration_id = ruleset_policy.get("required_check_integration_id")
-    enforced = policy.get("policy_status") == "p1-enforced" and platform.get("current_state") == "enforced"
-    enforcement = "active" if enforced else "disabled"
+    desired_active = policy.get("policy_status") in {"p1-activation-approved", "p1-enforced"}
+    enforcement = "active" if desired_active else "disabled"
 
     required_check: dict[str, Any] = {"context": "governance-baseline"}
-    if enforced and isinstance(integration_id, int) and not isinstance(integration_id, bool):
+    if desired_active and isinstance(integration_id, int) and not isinstance(integration_id, bool):
         required_check["integration_id"] = integration_id
     expected_main = {
         "name": "p1-main-governance",
@@ -449,6 +453,7 @@ def validate_rulesets(root: Path, policy: Any, findings: list[Finding]) -> None:
                     "allowed_merge_methods": ["squash"],
                     "dismiss_stale_reviews_on_push": False,
                     "require_code_owner_review": False,
+                    "require_extra_approval_for_unattributed_changes": False,
                     "require_last_push_approval": False,
                     "required_approving_review_count": 0,
                     "required_review_thread_resolution": True,
