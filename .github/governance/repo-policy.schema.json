@@ -26,6 +26,7 @@
     "policy_status": {
       "enum": [
         "p1-in-progress",
+        "p1-activation-approved",
         "p1-enforced"
       ]
     },
@@ -238,7 +239,11 @@
       "properties": {
         "phase": { "const": "P1" },
         "current_state": {
-          "enum": ["pending-remote-activation", "enforced"]
+          "enum": [
+            "pending-remote-activation",
+            "ready-for-remote-activation",
+            "enforced"
+          ]
         },
         "issues": {
           "const": [1, 2]
@@ -317,6 +322,30 @@
               "rulesets": {
                 "properties": {
                   "required_check_integration_id": { "type": "null" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "policy_status": { "const": "p1-activation-approved" }
+        }
+      },
+      "then": {
+        "properties": {
+          "platform_enforcement": {
+            "properties": {
+              "current_state": { "const": "ready-for-remote-activation" },
+              "rulesets": {
+                "properties": {
+                  "required_check_integration_id": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
                 }
               }
             }

@@ -45,6 +45,11 @@ would lock out the only maintainer while still not creating independent review.
 7. Private Vulnerability Reporting must remain enabled. Auto-merge, AI review,
    release automation, repository Secrets, and deployment environments remain
    out of P1.
+8. The machine state has three explicit transitions: `p1-in-progress` stores
+   disabled bootstrap payloads with no App ID; `p1-activation-approved` stores
+   reviewed active desired state bound to the observed App ID while remote
+   Rulesets are still disabled; `p1-enforced` is allowed only after remote
+   activation and readback. Desired state is never reported as effective state.
 
 ## Activation order
 
@@ -52,8 +57,9 @@ would lock out the only maintainer while still not creating independent review.
    human-controlled path.
 2. Observe one successful `governance-baseline` run on `main` and read its
    actual GitHub App ID; do not guess the `integration_id`.
-3. Commit a reviewed follow-up desired state containing that exact App ID and
-   active Ruleset payloads; do not POST the bootstrap files as active policy.
+3. Commit a reviewed `p1-activation-approved` desired state containing that
+   exact App ID and active Ruleset payloads; do not POST the bootstrap files as
+   active policy or call the desired state already enforced.
 4. Restrict merge methods and Actions permissions.
 5. Create both Rulesets disabled, read them back, then activate the all-tag
    Ruleset and finally the `main` Ruleset.

@@ -220,12 +220,27 @@ class GovernanceValidatorTests(unittest.TestCase):
         self.assertFalse(result["ok"])
         self.assertIn("local-action-forbidden", self.codes(result))
 
-    def test_enforced_policy_cannot_keep_pending_state(self) -> None:
+    def test_enforced_policy_cannot_keep_activation_ready_state(self) -> None:
         root, tracked = self.copy_repo()
         policy = root / validator.POLICY_PATH
         policy.write_text(
             policy.read_text(encoding="utf-8").replace(
-                "policy_status: p1-in-progress", "policy_status: p1-enforced", 1
+                "policy_status: p1-activation-approved", "policy_status: p1-enforced", 1
+            ),
+            encoding="utf-8",
+        )
+        result = validator.validate_repository(root, tracked)
+        self.assertFalse(result["ok"])
+        self.assertTrue({"policy-invariant", "schema-validation"}.issubset(self.codes(result)))
+
+    def test_activation_approved_requires_observed_app_id(self) -> None:
+        root, tracked = self.copy_repo()
+        policy = root / validator.POLICY_PATH
+        policy.write_text(
+            policy.read_text(encoding="utf-8").replace(
+                "required_check_integration_id: 15368",
+                "required_check_integration_id: null",
+                1,
             ),
             encoding="utf-8",
         )

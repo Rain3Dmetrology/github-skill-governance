@@ -1,5 +1,5 @@
 schema_version: 2
-policy_status: p1-in-progress
+policy_status: p1-activation-approved
 frozen_at: "2026-08-29"
 p1_started_at: "2026-08-29"
 
@@ -116,7 +116,7 @@ automation:
 
 platform_enforcement:
   phase: P1
-  current_state: pending-remote-activation
+  current_state: ready-for-remote-activation
   issues:
     - 1
     - 2
@@ -136,6 +136,6 @@ platform_enforcement:
     bypass_actor_count: 0
     required_approving_review_count: 0
     independent_approval_enforced: false
-    required_check_integration_id: null
+    required_check_integration_id: 15368
   vulnerability_reporting:
     required: true
