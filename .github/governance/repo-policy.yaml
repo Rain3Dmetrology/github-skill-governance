@@ -2,6 +2,7 @@ schema_version: 2
 policy_status: p1-activation-approved
 frozen_at: "2026-08-29"
 p1_started_at: "2026-08-29"
+negative_test_marker: true
 
 repository:
   owner: Rain3Dmetrology
