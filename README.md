@@ -9,10 +9,9 @@ Establish an auditable, bilingual governance baseline before any reusable agent
 Skill receives GitHub write or release authority.
 <!-- /readme-contract:section:value-proposition -->
 
-> Status: **P1 enforcement in progress**. This revision adds deterministic
-> checks, CODEOWNERS, and reviewable Ruleset desired state. Active platform
-> enforcement is not claimed until every GitHub receipt in P1 acceptance is
-> complete.
+> Status: **P1 platform enforcement active**. GitHub readback and a blocked
+> negative PR prove the required check, main protection, and all-tag freeze.
+> Release and unattended C authority remain disabled.
 
 <!-- readme-contract:section:why-this-repo -->
 ## Why this repository
@@ -29,7 +28,7 @@ is not a formal legal clean-room certification.
 
 <!-- readme-contract:claim:claim.release-authority-frozen -->
 Version and release ownership is frozen to one future authority,
-`release-please`; it is deliberately disabled during P0.
+`release-please`; it is deliberately disabled through P4.
 
 <!-- readme-contract:claim:claim.readme-contract-frozen -->
 English and Simplified Chinese README files share stable section and claim IDs
@@ -38,18 +37,23 @@ instead of relying on line-by-line translation.
 <!-- readme-contract:claim:claim.permission-boundaries-frozen -->
 Repository operations are classified as read-only (R), reversible write (W),
 or external commitment (C); agents receive no C permission by default.
+
+<!-- readme-contract:claim:claim.p1-platform-enforcement -->
+P1 platform controls are active: `main` requires the strict governance check
+through a pull request, and every tag name is frozen until P5. This does not
+grant any Skill standing mutation or release authority.
 <!-- /readme-contract:section:why-this-repo -->
 
 <!-- readme-contract:section:quick-start -->
 ## Quick start
 
-P1 is governance enforcement, not an installer or publisher:
+P1 is enforced governance, not an installer or publisher:
 
 ```text
 1. Run: python3 -m unittest discover -s tests -p 'test_*.py'
 2. Run: python3 scripts/validate_governance.py --root .
 3. Inspect: python3 scripts/github_preflight.py --help
-4. Review docs/P1_ACCEPTANCE.md before claiming platform enforcement
+4. Review docs/P1_ACCEPTANCE.md before changing enforced controls
 ```
 
 Do not install an AI reviewer or enable release automation from this revision.
@@ -59,12 +63,12 @@ Do not install an AI reviewer or enable release automation from this revision.
 ## Comparison and trade-offs
 
 <!-- readme-contract:claim:claim.p0-alternatives-comparison -->
-Assessment date: **2026-08-29**. This is a scope and architecture comparison,
+Assessment date: **2026-08-30**. This is a scope and architecture comparison,
 not a performance benchmark.
 
 | Approach | Choose it when | Do not choose it when | Current trade-off | Evidence |
 |---|---|---|---|---|
-| This governance repository | You need license, release-authority, bilingual README, and permission contracts before automation | You need an already verified multi-host package or working release path today | P0 is accepted; P1 checks and desired controls are reviewable, while remote enforcement still needs receipts | [Current policy and acceptance](./docs/comparisons/P0_ALTERNATIVES.md#this-p0-baseline) |
+| This governance repository | You need license, release-authority, bilingual README, and permission contracts before automation | You need an already verified multi-host package or working release path today | P1 platform controls are enforced; multi-host distribution, reusable C authorization, and release remain unshipped | [Current policy and acceptance](./docs/comparisons/P0_ALTERNATIVES.md#this-p0-baseline) |
 | One human-supervised release prompt | A trusted maintainer needs a manually supervised checklist and accepts its repository license | You need an OSI-open reusable core, deterministic gates, or verified multi-host use | Lower setup; policy and write commands remain in the same instruction surface | [Reviewed legacy snapshot](./docs/comparisons/P0_ALTERNATIVES.md#legacy-release-prompt) |
 | Unmanaged per-agent copies | The content is temporary and no shared desired state is required | The same revision must be reproduced or audited across hosts | No central setup; each operator owns revision tracking and reconciliation | [Defined comparison scope](./docs/comparisons/P0_ALTERNATIVES.md#unmanaged-per-agent-copies) |
 
@@ -77,7 +81,7 @@ failure-scenario reference, not a dependency or production release executor.
 
 | Limitation | User impact |
 |---|---|
-| P1 platform activation is not yet receipted | The new check is not claimed as a required merge gate yet |
+| Reusable C authorization broker is absent | No unattended agent may perform a C-class mutation |
 | Release automation is disabled | There is no supported tag or GitHub Release path yet |
 | Host adapters and smoke tests are absent | No agent platform is currently claimed as verified |
 | One maintainer owns review | CODEOWNERS routes review but cannot provide independent approval |
@@ -88,7 +92,7 @@ failure-scenario reference, not a dependency or production release executor.
 
 | Limitation | Immediate mitigation | Permanent path | Status |
 |---|---|---|---|
-| No accepted required gate yet | Run the deterministic tests locally and on the P1 PR | Bind the real check App ID and activate the main Ruleset | In progress: issues #1 and #2 |
+| No reusable C authorization broker | Keep C actions human-governed and reject reusable receipt strings | Trusted, action-bound, atomically consumed authorization | Open: Issue #1 |
 | No release path | Do not create tags or Releases | P5 Draft-first release Saga | Disabled by policy |
 | No verified hosts | Do not claim platform compatibility | P6 exact-SHA two-host canary | Not started |
 | No independent reviewer | Record maintainer self-review honestly; require zero approvals | Add a second trusted human before enforcing independent approval | Open limitation |
@@ -100,7 +104,7 @@ not presented as a shipped capability.
 <!-- readme-contract:section:compatibility -->
 ## Compatibility
 
-No runtime or agent host is verified in P0. The planned package format is the
+No runtime or agent host is verified in P1. The planned package format is the
 open Agent Skills directory convention, but compatibility claims require an
 exact-revision install and smoke-test receipt.
 <!-- /readme-contract:section:compatibility -->
@@ -114,7 +118,8 @@ exact-revision install and smoke-test receipt.
 | `claim.release-authority-frozen` | `repo-policy.yaml`, ADR-0002, ADR-0005 |
 | `claim.readme-contract-frozen` | `readme-contract.json`, ADR-0003, both README files |
 | `claim.permission-boundaries-frozen` | `repo-policy.yaml`, `owners.yaml`, ADR-0004, ADR-0005, ADR-0006 |
-| `claim.p0-alternatives-comparison` | `P0_ALTERNATIVES.md`, assessed 2026-08-29 |
+| `claim.p1-platform-enforcement` | `P1_ACCEPTANCE.md`, ADR-0008, active remote receipt |
+| `claim.p0-alternatives-comparison` | `P0_ALTERNATIVES.md`, assessed 2026-08-30 |
 
 Machine-readable claim mapping lives in [`docs/claims.yaml`](./docs/claims.yaml).
 <!-- /readme-contract:section:evidence -->
@@ -125,12 +130,12 @@ Machine-readable claim mapping lives in [`docs/claims.yaml`](./docs/claims.yaml)
 | Phase | Entry condition | Outcome required before the next phase |
 |---|---|---|
 | P0 | Repository bootstrap authorized | License, version authority, README contract, and R/W/C boundaries frozen |
-| P1 | P0 accepted | GitHub platform enforcement and least-privilege checks; current phase |
+| P1 | P0 accepted | GitHub platform enforcement and least-privilege checks; accepted |
 | P2 | P1 enforced | Deterministic README, release-state, and distribution validators |
 | P3+ | Prior phase evidence exists | Core Skills, Draft release Saga, then two-host canary |
 
-P0 is accepted and P1 is the current implementation phase. P2 and later phases
-remain decision gates, not delivery claims.
+P0 and P1 are accepted. P2 and later phases remain decision gates, not delivery
+claims.
 <!-- /readme-contract:section:roadmap -->
 
 <!-- readme-contract:section:security -->

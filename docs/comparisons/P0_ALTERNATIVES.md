@@ -1,6 +1,6 @@
 # P0 Alternatives Evidence
 
-- Assessment date: 2026-08-29
+- Assessment date: 2026-08-30
 - Scope: repository-visible behavior at the cited revisions
 - Method: qualitative architecture and scope comparison
 - Excluded: runtime performance, adoption, popularity, and cost benchmarks
@@ -10,22 +10,24 @@ rank products or claim that one approach is universally better.
 
 ## This P0 baseline
 
-P0 remains the accepted foundation. The current P1 candidate adds reviewable
-enforcement artifacts without changing the P0 release boundary:
+P0 remains the accepted foundation. P1 now adds active, receipted platform
+enforcement without changing the P0 release boundary:
 
 - `.github/governance/repo-policy.yaml` freezes license, release authority,
   README rules, and R/W/C permissions.
 - `docs/P0_ACCEPTANCE.md` distinguishes local evidence from remote evidence.
 - `docs/adr/0001` through `0006` record the accepted baseline and correction
   decisions.
-- `scripts/`, `tests/`, CODEOWNERS, and one read-only workflow implement the P1
-  candidate; `docs/P1_ACCEPTANCE.md` prevents desired state from being reported
-  as active platform enforcement before remote receipts exist.
+- `scripts/`, tests, CODEOWNERS, and one canonical read-only workflow implement
+  deterministic checks; active Rulesets require that check for `main` and freeze
+  every tag name.
+- `docs/P1_ACCEPTANCE.md` and the P1 remote receipts distinguish desired state,
+  effective state, and the still-open C-authorization broker residual.
 - No tag, Release, host adapter, release credential, or publisher is present.
 
-Therefore this repository can be selected for a reviewable governance and
-enforcement path, but not for verified multi-host distribution or release
-automation today.
+Therefore this repository can be selected for active, reviewable GitHub
+governance enforcement, but not for verified multi-host distribution,
+unattended C mutations, or release automation today.
 
 ## Legacy release prompt
 

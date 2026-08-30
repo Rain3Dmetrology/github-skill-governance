@@ -29,6 +29,17 @@ there is no organization team or second maintainer to satisfy independent
 approval. P1 therefore requires a PR and deterministic check with zero required
 approvals, records the limitation, and configures no bypass actor.
 
+## 2026-08-30 API drift note
+
+The live Ruleset readback exposed
+`require_extra_approval_for_unattributed_changes`, a public-preview control for
+unattributed Copilot pull requests. GitHub's available-rules documentation says
+it defaults to enabled and has no effect when required approvals are zero. P1
+still sets it explicitly to `false` so the single-maintainer, zero-approval
+model is deterministic; the post-activation API readback returned `false`.
+Because this control is preview functionality, any GitHub schema or maintainer
+policy change triggers revalidation.
+
 ## Revalidation triggers
 
 Re-run this research and update the desired-state files when any of the
@@ -39,4 +50,5 @@ following changes:
 - required check name or GitHub App identity;
 - allowed Action revision;
 - maintainer count or independent-review policy;
+- public-preview pull-request rule fields;
 - P5 release-authority activation.

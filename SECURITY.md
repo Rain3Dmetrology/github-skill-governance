@@ -2,8 +2,8 @@
 
 ## Current scope
 
-This repository is entering P1 and contains governance documents, read-only
-validators, tests, and a read-only CI workflow. It does not hold deployment
+This repository has accepted P1 platform enforcement and contains governance
+documents, read-only validators, tests, and a read-only CI workflow. It does not hold deployment
 credentials, release credentials, GitHub App keys, production tokens, or
 write-capable automation. An interactive connector may have broader technical
 capability, but that capability is not standing authority delegated to a Skill.
@@ -13,13 +13,13 @@ capability, but that capability is not standing authority delegated to a Skill.
 Do not disclose credentials or exploitable details in a public Issue.
 
 Use [GitHub Private Vulnerability Reporting](https://github.com/Rain3Dmetrology/github-skill-governance/security/advisories/new).
-The repository API returned `enabled: true` on 2026-08-29. If GitHub makes that
+The repository API returned `enabled: true` on 2026-08-30. If GitHub makes that
 route unavailable, contact the repository owner through a private channel
 already known to you and reference only a non-sensitive tracking identifier in
 public.
 
-P1 must verify that the private route remains enabled before any executable
-script or workflow is accepted.
+P1 verified that the private route remained enabled before accepting the
+executable validator and workflow; later phases must revalidate it.
 
 ## Sensitive data
 

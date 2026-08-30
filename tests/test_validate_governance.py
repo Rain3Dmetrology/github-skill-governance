@@ -225,7 +225,9 @@ class GovernanceValidatorTests(unittest.TestCase):
         policy = root / validator.POLICY_PATH
         policy.write_text(
             policy.read_text(encoding="utf-8").replace(
-                "policy_status: p1-activation-approved", "policy_status: p1-enforced", 1
+                "current_state: enforced",
+                "current_state: ready-for-remote-activation",
+                1,
             ),
             encoding="utf-8",
         )

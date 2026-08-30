@@ -4,7 +4,7 @@ project:
   slug: github-skill-governance
   owner: Rain3Dmetrology
   repository: https://github.com/Rain3Dmetrology/github-skill-governance
-  status: p1-enforcement-in-progress
+  status: p1-platform-enforcement-enforced
   default_locale: en
 
 value_proposition:
@@ -16,8 +16,8 @@ current_capabilities:
   version_authority_decision: implemented
   bilingual_readme_contract: implemented
   permission_boundary_contract: implemented
-  deterministic_ci_gates: in-progress
-  readonly_identity_preflight: in-progress
-  github_platform_enforcement: ready-for-remote-activation
+  deterministic_ci_gates: implemented
+  readonly_identity_preflight: implemented-authorization-not-verified
+  github_platform_enforcement: enforced
   release_automation: disabled
   host_distribution: not-implemented
