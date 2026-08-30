@@ -8,8 +8,9 @@
 在智能体 Skill 获得 GitHub 写入或发布权前，先建立可审计的双语治理基线。
 <!-- /readme-contract:section:value-proposition -->
 
-> 当前状态：**P0 治理基线**。本仓库尚未运行 CI、发布 Release、安装
-> Skill，也没有授予任何智能体发布权限。
+> 当前状态：**P1 强制实施中**。本 revision 加入确定性检查、CODEOWNERS
+> 和可审查的 Ruleset 期望状态。只有 P1 验收中的 GitHub 回执全部完成后，
+> 才会声明平台强制已生效。
 
 <!-- readme-contract:section:why-this-repo -->
 ## 为什么选择这个仓库
@@ -35,16 +36,16 @@ P0 基线是采用独立重写策略的新 Apache-2.0 仓库。来源日志记�
 <!-- readme-contract:section:quick-start -->
 ## 快速开始
 
-P0 是治理审核，不是安装器：
+P1 是治理强制，不是安装器或发布器：
 
 ```text
-1. 阅读 .github/governance/repo-policy.yaml
-2. 审核 docs/adr/0001 至 0006
-3. 比较 README.md 与 README.zh-CN.md 的 section/claim ID
-4. 确认 docs/P0_ACCEPTANCE.md 中的每个 P0 项目
+1. 运行：python3 -m unittest discover -s tests -p 'test_*.py'
+2. 运行：python3 scripts/validate_governance.py --root .
+3. 查看：python3 scripts/github_preflight.py --help
+4. 声明平台强制生效前审核 docs/P1_ACCEPTANCE.md
 ```
 
-不要从该基线安装 AI 审查器或启用发布自动化。
+不要从该 revision 安装 AI 审查器或启用发布自动化。
 <!-- /readme-contract:section:quick-start -->
 
 <!-- readme-contract:section:comparison-and-tradeoffs -->
@@ -55,7 +56,7 @@ P0 是治理审核，不是安装器：
 
 | 方案 | 适合选择的条件 | 不该选择的条件 | 当前取舍 | 证据 |
 |---|---|---|---|---|
-| 本 P0 治理基线 | 需要先冻结许可证、发布权威、双语 README 和权限契约 | 今天就需要已强制执行的 CI Gate 或可用发布路径 | 边界现在可审核；强制机制尚未交付 | [P0 策略与验收](./docs/comparisons/P0_ALTERNATIVES.md#this-p0-baseline) |
+| 本治理仓库 | 需要在自动化前冻结许可证、发布权威、双语 README 和权限契约 | 今天就需要已验证的多宿主包或可用发布路径 | P0 已验收；P1 检查与期望控制可审核，远端强制仍需回执 | [当前策略与验收](./docs/comparisons/P0_ALTERNATIVES.md#this-p0-baseline) |
 | 人工监督的单体发布提示词 | 可信维护者需要人工监督的检查清单，并接受其仓库许可证 | 需要 OSI 开源核心、确定性 Gate 或已验证多宿主使用 | 配置更少；策略与写命令仍处于同一指令面 | [已审查旧仓快照](./docs/comparisons/P0_ALTERNATIVES.md#legacy-release-prompt) |
 | 每个智能体的非托管副本 | 内容临时且不需要共享期望状态 | 必须跨宿主复现或审计同一 revision | 无中央配置；每个操作者自行跟踪版本并协调收敛 | [对比范围定义](./docs/comparisons/P0_ALTERNATIVES.md#unmanaged-per-agent-copies) |
 
@@ -68,10 +69,10 @@ P0 是治理审核，不是安装器：
 
 | 限制 | 对用户的影响 |
 |---|---|
-| P0 只有策略和文档 | 目前没有自动 Gate 阻止错误 PR |
+| P1 平台激活尚无完整回执 | 新检查尚未被声明为 required merge Gate |
 | 发布自动化被禁用 | 尚无受支持的 tag 或 GitHub Release 路径 |
 | 没有宿主 adapter 与 smoke test | 当前不声称已验证任何智能体平台 |
-| P0 尚未配置 GitHub Rulesets | 策略已冻结，但平台尚未强制执行 |
+| 只有一名维护者负责审查 | CODEOWNERS 可以路由审查，但不能提供独立批准 |
 <!-- /readme-contract:section:current-limitations -->
 
 <!-- readme-contract:section:mitigations -->
@@ -79,10 +80,10 @@ P0 是治理审核，不是安装器：
 
 | 限制 | 立即措施 | 永久方案 | 状态 |
 |---|---|---|---|
-| 没有自动 Gate | 所有 P0 文件人工审核 | P1 Rulesets 与确定性检查 | 未开始 |
+| required Gate 尚未验收 | 在本地和 P1 PR 上运行确定性测试 | 绑定真实 check App ID 并激活 main Ruleset | 进行中：Issue #1、#2 |
 | 没有发布路径 | 不创建 tag 或 Release | P5 Draft-first 发布 Saga | 策略禁用 |
 | 没有已验证宿主 | 不声明平台兼容性 | P6 exact-SHA 双宿主 canary | 未开始 |
-| 没有平台分支保护 | bootstrap 后避免直接 push | P1 required checks 与 CODEOWNERS | 未开始 |
+| 没有独立审查者 | 如实记录维护者自审，审批数保持为 0 | 强制独立批准前先增加第二名可信人类 | 开放限制 |
 
 后续功能在实施前必须先建立 GitHub Issue；在此之前不会包装成已交付能力。
 <!-- /readme-contract:section:mitigations -->
@@ -114,18 +115,18 @@ P0 不验证任何运行时或智能体宿主。未来包格式采用开放 Agen
 | 阶段 | 进入条件 | 进入下一阶段前必须得到的结果 |
 |---|---|---|
 | P0 | 已授权仓库 bootstrap | 许可证、版本权威、README 契约和 R/W/C 权限冻结 |
-| P1 | P0 验收 | GitHub 平台强制与最小权限检查 |
+| P1 | P0 验收 | GitHub 平台强制与最小权限检查；当前阶段 |
 | P2 | P1 已强制 | 确定性 README、发布状态和分发校验器 |
 | P3+ | 上一阶段证据存在 | Core Skills、Draft 发布 Saga、双宿主 canary |
 
-当前只有 P0。后续阶段是决策 Gate，不是交付声明。
+P0 已验收，P1 是当前实施阶段。P2 及以后仍是决策 Gate，不是交付声明。
 <!-- /readme-contract:section:roadmap -->
 
 <!-- readme-contract:section:security -->
 ## 安全
 
 禁止提交凭据、客户私密名称、内部路径或生产 Token。参见
-[`SECURITY.md`](./SECURITY.md)。P0 不向任何 Skill 委派常驻的 merge、tag、
+[`SECURITY.md`](./SECURITY.md)。P1 不向任何 Skill 委派常驻的 merge、tag、
 Release、Ruleset、Secret 或生产部署权限。经人类授权的任务执行者只能执行
 ADR-0005 明确限定的 C 类动作。
 <!-- /readme-contract:section:security -->

@@ -1,0 +1,6 @@
+{
+  "checkout_sha": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+  "encoded_fake_github_token": "Z2hwX0FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFB",
+  "unknown_policy_field": "unexpected_escape_hatch",
+  "unpinned_action": "actions/checkout@v7"
+}

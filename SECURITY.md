@@ -2,11 +2,11 @@
 
 ## Current scope
 
-This repository is in P0 and contains governance documents only. It does not
-hold deployment credentials, release credentials, GitHub App keys, production
-tokens, or write-capable automation. An interactive connector may have broader
-technical capability, but that capability is not standing authority delegated
-to a Skill.
+This repository is entering P1 and contains governance documents, read-only
+validators, tests, and a read-only CI workflow. It does not hold deployment
+credentials, release credentials, GitHub App keys, production tokens, or
+write-capable automation. An interactive connector may have broader technical
+capability, but that capability is not standing authority delegated to a Skill.
 
 ## Report a vulnerability
 
@@ -35,5 +35,5 @@ Deleting the visible file is not sufficient.
 
 ## Permission boundary
 
-P0 grants no Skill standing merge, tag, Release, Ruleset, Secret, or deployment
+P1 grants no Skill standing merge, tag, Release, Ruleset, Secret, or deployment
 authority. See ADR-0004 and ADR-0005 for the R/W/C and delegation models.

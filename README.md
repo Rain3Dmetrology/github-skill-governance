@@ -9,8 +9,10 @@ Establish an auditable, bilingual governance baseline before any reusable agent
 Skill receives GitHub write or release authority.
 <!-- /readme-contract:section:value-proposition -->
 
-> Status: **P0 governance baseline**. This repository does not yet run CI,
-> publish releases, install skills, or grant any agent release authority.
+> Status: **P1 enforcement in progress**. This revision adds deterministic
+> checks, CODEOWNERS, and reviewable Ruleset desired state. Active platform
+> enforcement is not claimed until every GitHub receipt in P1 acceptance is
+> complete.
 
 <!-- readme-contract:section:why-this-repo -->
 ## Why this repository
@@ -41,16 +43,16 @@ or external commitment (C); agents receive no C permission by default.
 <!-- readme-contract:section:quick-start -->
 ## Quick start
 
-P0 is a governance review, not an installer:
+P1 is governance enforcement, not an installer or publisher:
 
 ```text
-1. Read .github/governance/repo-policy.yaml
-2. Review docs/adr/0001 through 0006
-3. Compare README.md and README.zh-CN.md section/claim IDs
-4. Confirm every P0 item in docs/P0_ACCEPTANCE.md
+1. Run: python3 -m unittest discover -s tests -p 'test_*.py'
+2. Run: python3 scripts/validate_governance.py --root .
+3. Inspect: python3 scripts/github_preflight.py --help
+4. Review docs/P1_ACCEPTANCE.md before claiming platform enforcement
 ```
 
-Do not install an AI reviewer or enable release automation from this baseline.
+Do not install an AI reviewer or enable release automation from this revision.
 <!-- /readme-contract:section:quick-start -->
 
 <!-- readme-contract:section:comparison-and-tradeoffs -->
@@ -62,7 +64,7 @@ not a performance benchmark.
 
 | Approach | Choose it when | Do not choose it when | Current trade-off | Evidence |
 |---|---|---|---|---|
-| This P0 governance baseline | You need license, release-authority, bilingual README, and permission contracts before automation | You need an enforced CI gate or working release path today | The boundary is reviewable now; enforcement is planned, not shipped | [P0 policy and acceptance](./docs/comparisons/P0_ALTERNATIVES.md#this-p0-baseline) |
+| This governance repository | You need license, release-authority, bilingual README, and permission contracts before automation | You need an already verified multi-host package or working release path today | P0 is accepted; P1 checks and desired controls are reviewable, while remote enforcement still needs receipts | [Current policy and acceptance](./docs/comparisons/P0_ALTERNATIVES.md#this-p0-baseline) |
 | One human-supervised release prompt | A trusted maintainer needs a manually supervised checklist and accepts its repository license | You need an OSI-open reusable core, deterministic gates, or verified multi-host use | Lower setup; policy and write commands remain in the same instruction surface | [Reviewed legacy snapshot](./docs/comparisons/P0_ALTERNATIVES.md#legacy-release-prompt) |
 | Unmanaged per-agent copies | The content is temporary and no shared desired state is required | The same revision must be reproduced or audited across hosts | No central setup; each operator owns revision tracking and reconciliation | [Defined comparison scope](./docs/comparisons/P0_ALTERNATIVES.md#unmanaged-per-agent-copies) |
 
@@ -75,10 +77,10 @@ failure-scenario reference, not a dependency or production release executor.
 
 | Limitation | User impact |
 |---|---|
-| P0 contains policy and documentation only | No automated gate currently blocks a bad pull request |
+| P1 platform activation is not yet receipted | The new check is not claimed as a required merge gate yet |
 | Release automation is disabled | There is no supported tag or GitHub Release path yet |
 | Host adapters and smoke tests are absent | No agent platform is currently claimed as verified |
-| GitHub Rulesets are not configured in P0 | The repository policy is frozen but not yet platform-enforced |
+| One maintainer owns review | CODEOWNERS routes review but cannot provide independent approval |
 <!-- /readme-contract:section:current-limitations -->
 
 <!-- readme-contract:section:mitigations -->
@@ -86,10 +88,10 @@ failure-scenario reference, not a dependency or production release executor.
 
 | Limitation | Immediate mitigation | Permanent path | Status |
 |---|---|---|---|
-| No automated gates | Treat all P0 files as human-reviewed policy | P1 Rulesets and deterministic checks | Not started |
+| No accepted required gate yet | Run the deterministic tests locally and on the P1 PR | Bind the real check App ID and activate the main Ruleset | In progress: issues #1 and #2 |
 | No release path | Do not create tags or Releases | P5 Draft-first release Saga | Disabled by policy |
 | No verified hosts | Do not claim platform compatibility | P6 exact-SHA two-host canary | Not started |
-| No enforced branch protection | Avoid direct pushes after bootstrap | P1 required checks and CODEOWNERS | Not started |
+| No independent reviewer | Record maintainer self-review honestly; require zero approvals | Add a second trusted human before enforcing independent approval | Open limitation |
 
 Future work will receive GitHub issues before implementation; until then it is
 not presented as a shipped capability.
@@ -123,18 +125,19 @@ Machine-readable claim mapping lives in [`docs/claims.yaml`](./docs/claims.yaml)
 | Phase | Entry condition | Outcome required before the next phase |
 |---|---|---|
 | P0 | Repository bootstrap authorized | License, version authority, README contract, and R/W/C boundaries frozen |
-| P1 | P0 accepted | GitHub platform enforcement and least-privilege checks |
+| P1 | P0 accepted | GitHub platform enforcement and least-privilege checks; current phase |
 | P2 | P1 enforced | Deterministic README, release-state, and distribution validators |
 | P3+ | Prior phase evidence exists | Core Skills, Draft release Saga, then two-host canary |
 
-Only P0 is current. Later phases are decision gates, not delivery claims.
+P0 is accepted and P1 is the current implementation phase. P2 and later phases
+remain decision gates, not delivery claims.
 <!-- /readme-contract:section:roadmap -->
 
 <!-- readme-contract:section:security -->
 ## Security
 
 Do not submit credentials, private client names, internal paths, or production
-tokens. See [`SECURITY.md`](./SECURITY.md). P0 delegates no standing merge,
+tokens. See [`SECURITY.md`](./SECURITY.md). P1 delegates no standing merge,
 tag, release, Ruleset, Secret, or deployment authority to any Skill. A human-
 authorized task actor may execute only the explicitly scoped C actions defined
 by ADR-0005.
