@@ -19,5 +19,6 @@ current_capabilities:
   deterministic_ci_gates: implemented
   readonly_identity_preflight: implemented-authorization-not-verified
   github_platform_enforcement: enforced
+  c_authorization_broker: dormant-contract-not-remotely-active
   release_automation: disabled
   host_distribution: not-implemented

@@ -45,6 +45,20 @@ claims:
       - docs/adr/0008-p1-platform-enforcement-accepted.md
       - docs/evidence/P1_REMOTE_ACCEPTANCE_2026-08-30.md
 
+  - id: claim.c-authorization-broker-bootstrap
+    kind: governance
+    status: implemented
+    evidence:
+      - .github/governance/c-authorization-broker.schema.json
+      - .github/governance/c-authorization-broker-cli.json
+      - .github/governance/environments/c-authorization.json
+      - scripts/c_authorization_broker.py
+      - tests/test_c_authorization_broker.py
+      - docs/P1_C_BROKER_ACCEPTANCE.md
+      - docs/evidence/P1_C_BROKER_LOCAL_CANDIDATE_2026-08-31.md
+      - docs/adr/0009-github-native-single-use-c-authorization.md
+      - docs/threat-models/C_AUTHORIZATION_BROKER.md
+
   - id: claim.p0-alternatives-comparison
     kind: comparative
     status: implemented

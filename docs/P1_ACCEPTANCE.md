@@ -3,7 +3,8 @@
 - Repository: `Rain3Dmetrology/github-skill-governance`
 - Issues: [#1](https://github.com/Rain3Dmetrology/github-skill-governance/issues/1),
   [#2](https://github.com/Rain3Dmetrology/github-skill-governance/issues/2)
-- State: platform enforcement accepted; authorization broker residual open
+- State: platform enforcement accepted; Broker PR-B0 contract in progress and
+  remote C authorization still inactive
 - Date: 2026-08-30
 
 ## Deterministic repository controls
@@ -33,7 +34,8 @@
   treated as delegated C authority.
 - [ ] Fresh, adjacent, action-bound C authorization is backed by trusted
   issuance and atomic single-use consumption. This is Issue #1 and is not
-  falsely implemented by accepting a reusable string.
+  falsely implemented by accepting a reusable string. The staged acceptance
+  record is [`P1_C_BROKER_ACCEPTANCE.md`](./P1_C_BROKER_ACCEPTANCE.md).
 
 ## GitHub platform enforcement
 
@@ -57,6 +59,11 @@ control above is checked and linked to point-in-time remote evidence. The
 unchecked C-authorization broker criterion is a deliberately unshipped
 capability tracked by Issue #1; no automated C executor may activate until it
 is solved. Platform acceptance does not grant release authority.
+
+PR-B0 may add a dormant, locally tested executor and the desired protected
+Environment contract. Neither is activation: the Environment requires a later,
+adjacent C authorization, and the canonical C workflow must remain absent until
+that Environment is independently read back.
 
 ## Local candidate receipt
 

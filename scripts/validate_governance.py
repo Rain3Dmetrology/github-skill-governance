@@ -24,6 +24,10 @@ CODEOWNERS_PATH = ".github/CODEOWNERS"
 MAIN_RULESET_PATH = ".github/governance/rulesets/main.json"
 TAG_RULESET_PATH = ".github/governance/rulesets/freeze-all-tags-until-p5.json"
 WORKFLOW_PATH = ".github/workflows/governance-baseline.yml"
+BROKER_SCHEMA_PATH = ".github/governance/c-authorization-broker.schema.json"
+BROKER_CLI_PATH = ".github/governance/c-authorization-broker-cli.json"
+BROKER_ENVIRONMENT_PATH = ".github/governance/environments/c-authorization.json"
+BROKER_WORKFLOW_PATH = ".github/workflows/c-merge-exact-pr.yml"
 EXPECTED_BASELINE_WORKFLOW = """name: governance-baseline
 
 on:
@@ -640,6 +644,180 @@ def validate_policy_schema(schema: Any, policy: Any, findings: list[Finding]) ->
     apply_schema(schema, policy, POLICY_PATH)
 
 
+def validate_broker_bootstrap_contract(
+    root: Path,
+    schema: Any,
+    cli_contract: Any,
+    environment: Any,
+    findings: list[Finding],
+) -> None:
+    """Validate the closed PR-B0 Broker contract without activating a workflow."""
+
+    if not isinstance(schema, dict):
+        findings.append(Finding("broker-schema-type", BROKER_SCHEMA_PATH, "schema must be a JSON object"))
+        return
+    expected_root = {
+        "$schema", "$id", "title", "description", "type",
+        "additionalProperties", "required", "properties",
+    }
+    if set(schema) != expected_root:
+        findings.append(Finding("broker-schema-fields", BROKER_SCHEMA_PATH, "schema root must use the frozen exact field set"))
+    for path, expected in {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": "https://github.com/Rain3Dmetrology/github-skill-governance/raw/main/.github/governance/c-authorization-broker.schema.json",
+        "type": "object",
+        "additionalProperties": False,
+    }.items():
+        if schema.get(path) != expected:
+            findings.append(Finding("broker-schema-invariant", f"{BROKER_SCHEMA_PATH}:{path}", f"expected {expected!r}"))
+    if set(schema.get("required", [])) != {
+        "schema_version", "repository", "run", "workflow", "operation", "authorization",
+    }:
+        findings.append(Finding("broker-schema-required", BROKER_SCHEMA_PATH, "manifest root fields are not the frozen exact set"))
+
+    def descend(value: Any, keys: tuple[str, ...]) -> Any:
+        current = value
+        for key in keys:
+            if not isinstance(current, dict) or key not in current:
+                return None
+            current = current[key]
+        return current
+
+    def check_closed_objects(value: Any, location: str) -> None:
+        if isinstance(value, dict):
+            if value.get("type") == "object":
+                properties = value.get("properties")
+                required = value.get("required")
+                if value.get("additionalProperties") is not False:
+                    findings.append(Finding("broker-schema-open", BROKER_SCHEMA_PATH, f"{location} must forbid additional properties"))
+                if not isinstance(properties, dict) or not isinstance(required, list) or set(properties) != set(required):
+                    findings.append(Finding("broker-schema-required", BROKER_SCHEMA_PATH, f"{location} required fields must exactly match properties"))
+            for key, child in value.items():
+                check_closed_objects(child, f"{location}/{key}")
+        elif isinstance(value, list):
+            for index, child in enumerate(value):
+                check_closed_objects(child, f"{location}/{index}")
+
+    check_closed_objects(schema, "#")
+    critical = {
+        ("properties", "schema_version", "const"): "c-authorization/v1",
+        ("properties", "repository", "properties", "id", "const"): 1350230486,
+        ("properties", "repository", "properties", "full_name", "const"): "Rain3Dmetrology/github-skill-governance",
+        ("properties", "repository", "properties", "default_branch", "const"): "main",
+        ("properties", "run", "properties", "attempt", "const"): 1,
+        ("properties", "run", "properties", "event", "const"): "workflow_dispatch",
+        ("properties", "workflow", "properties", "path", "const"): BROKER_WORKFLOW_PATH,
+        ("properties", "workflow", "properties", "ref", "const"): "Rain3Dmetrology/github-skill-governance/.github/workflows/c-merge-exact-pr.yml@refs/heads/main",
+        ("properties", "operation", "properties", "type", "const"): "merge-exact-pr",
+        ("properties", "operation", "properties", "base_ref", "const"): "refs/heads/main",
+        ("properties", "operation", "properties", "merge_method", "const"): "squash",
+        ("properties", "operation", "properties", "required_check", "properties", "name", "const"): "governance-baseline",
+        ("properties", "operation", "properties", "required_check", "properties", "app_id", "const"): 15368,
+        ("properties", "authorization", "properties", "environment", "const"): "c-authorization",
+        ("properties", "authorization", "properties", "reviewer", "properties", "login", "const"): "Rain3Dmetrology",
+        ("properties", "authorization", "properties", "reviewer", "properties", "id", "const"): 79391663,
+        ("properties", "authorization", "properties", "max_run_age_seconds", "const"): 600,
+    }
+    for pointer, expected in critical.items():
+        if descend(schema, pointer) != expected:
+            findings.append(Finding("broker-schema-invariant", BROKER_SCHEMA_PATH, f"{'/'.join(pointer)} must equal {expected!r}"))
+    for pointer in (
+        ("properties", "workflow", "properties", "sha", "pattern"),
+        ("properties", "operation", "properties", "expected_base_sha", "pattern"),
+        ("properties", "operation", "properties", "expected_head_sha", "pattern"),
+    ):
+        if descend(schema, pointer) != "^[0-9a-f]{40}$":
+            findings.append(Finding("broker-schema-invariant", BROKER_SCHEMA_PATH, f"{'/'.join(pointer)} must require a lowercase 40-hex SHA"))
+    for pointer in (
+        ("properties", "run", "properties", "id", "minimum"),
+        ("properties", "operation", "properties", "pull_request_number", "minimum"),
+    ):
+        if descend(schema, pointer) != 1:
+            findings.append(Finding("broker-schema-invariant", BROKER_SCHEMA_PATH, f"{'/'.join(pointer)} must equal 1"))
+
+    expected_environment = {
+        "schemaVersion": 1,
+        "status": "desired-not-applied",
+        "repository": {
+            "id": 1350230486,
+            "fullName": "Rain3Dmetrology/github-skill-governance",
+        },
+        "environment": {
+            "name": "c-authorization",
+            "apiPayload": {
+                "wait_timer": 0,
+                "prevent_self_review": False,
+                "reviewers": [{"type": "User", "id": 79391663}],
+                "deployment_branch_policy": {
+                    "protected_branches": True,
+                    "custom_branch_policies": False,
+                },
+            },
+            "expectedReviewer": {"login": "Rain3Dmetrology", "id": 79391663},
+            "expectedSecrets": [],
+            "manualUiAssertions": {"administratorsCanBypassProtectionRules": False},
+        },
+        "activationSafety": {
+            "workflowMustRemainAbsentUntilExactReadback": True,
+            "missingEnvironmentMustNeverBeAutoCreatedByWorkflow": True,
+            "environmentMutationRequiresAdjacentCActionAuthorization": True,
+        },
+    }
+    if environment != expected_environment:
+        findings.append(Finding("broker-environment-desired-state", BROKER_ENVIRONMENT_PATH, "must exactly match the frozen PR-B0 desired state"))
+
+    expected_cli_contract = {
+        "schemaVersion": 1,
+        "status": "dormant-no-workflow",
+        "script": "scripts/c_authorization_broker.py",
+        "manifestSchema": BROKER_SCHEMA_PATH,
+        "approvalCommentFormat": "APPROVE-C1 sha256:<64-lowercase-hex>",
+        "digest": "sha256(utf8(json-sort-keys-no-whitespace-ensure-ascii-false))",
+        "credentialInput": {
+            "environmentVariable": "GITHUB_TOKEN",
+            "commandLineAllowed": False,
+            "fileInputAllowed": False,
+        },
+        "commands": {
+            "prepare": {"network": "none", "mutation": "none", "successStates": ["PREPARED"]},
+            "consume": {
+                "network": "api.github.com",
+                "mutation": "one-conditional-squash-merge",
+                "successStates": ["COMMITTED"],
+                "failureStates": ["ABORTED_PRE_EFFECT", "RECOVERY_REQUIRED"],
+            },
+            "verify": {
+                "network": "api.github.com",
+                "mutation": "none",
+                "successStates": ["VERIFIED_COMMITTED"],
+                "failureStates": ["VERIFIED_NOT_COMMITTED", "RECOVERY_REQUIRED"],
+            },
+        },
+        "exitCodes": {
+            "0": "requested state verified",
+            "1": "failed or proven not committed",
+            "2": "effect state requires reconciliation",
+        },
+        "prepareSuccessFields": [
+            "approval_comment", "canonical_manifest", "errors", "manifest", "ok",
+            "phase", "request_digest", "state",
+        ],
+        "effectSuccessFields": [
+            "errors", "ok", "phase", "receipt", "request_digest", "state",
+        ],
+        "receiptFields": [
+            "expected_base_sha", "expected_head_sha", "merge_commit_sha",
+            "operation", "pull_request_number", "reconciled", "repository_id",
+            "run_attempt", "run_id",
+        ],
+        "failureRequiredFields": ["errors", "ok", "phase", "state"],
+    }
+    if cli_contract != expected_cli_contract:
+        findings.append(Finding("broker-cli-contract", BROKER_CLI_PATH, "must exactly match the frozen PR-B0 command, state, exit-code, and receipt contract"))
+    if (root / BROKER_WORKFLOW_PATH).exists():
+        findings.append(Finding("broker-premature-activation", BROKER_WORKFLOW_PATH, "workflow must remain absent until protected Environment readback is accepted"))
+
+
 SECTION_RE = re.compile(r"<!--\s*readme-contract:section:([a-z0-9-]+)\s*-->(.*?)<!--\s*/readme-contract:section:\1\s*-->", re.DOTALL)
 CLAIM_RE = re.compile(r"<!--\s*readme-contract:claim:([a-z0-9.-]+)\s*-->")
 MARKDOWN_LINK_RE = re.compile(r"(?<!!)\[[^\]]*\]\(([^)]+)\)")
@@ -1043,6 +1221,9 @@ def validate_repository(root: Path, tracked: Iterable[str] | None = None) -> dic
     contract = _read_json(root, README_CONTRACT_PATH, findings)
     owners = _read_yaml(root, OWNERS_PATH, findings)
     claims = _read_yaml(root, CLAIMS_PATH, findings)
+    broker_schema = _read_json(root, BROKER_SCHEMA_PATH, findings)
+    broker_cli = _read_json(root, BROKER_CLI_PATH, findings)
+    broker_environment = _read_json(root, BROKER_ENVIRONMENT_PATH, findings)
     if policy is not None:
         validate_policy(policy, findings)
         validate_rulesets(root, policy, findings)
@@ -1052,6 +1233,8 @@ def validate_repository(root: Path, tracked: Iterable[str] | None = None) -> dic
         validate_readmes(root, contract, claims, findings)
     if owners is not None:
         validate_owners(root, owners, findings)
+    if broker_schema is not None and broker_cli is not None and broker_environment is not None:
+        validate_broker_bootstrap_contract(root, broker_schema, broker_cli, broker_environment, findings)
     tracked_list: list[str]
     executable_paths: set[str] = set()
     if tracked is None:

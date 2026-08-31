@@ -3,10 +3,13 @@
 ## Current scope
 
 This repository has accepted P1 platform enforcement and contains governance
-documents, read-only validators, tests, and a read-only CI workflow. It does not hold deployment
-credentials, release credentials, GitHub App keys, production tokens, or
-write-capable automation. An interactive connector may have broader technical
-capability, but that capability is not standing authority delegated to a Skill.
+documents, validators, tests, and one read-only CI workflow. PR-B0 also defines
+a dormant, one-route C-authorization executor, but no workflow invokes it and
+the required protected Environment does not yet exist. The repository holds no
+deployment credentials, release credentials, GitHub App keys, production
+tokens, or active write-capable automation. An interactive connector may have
+broader technical capability, but that capability is not standing authority
+delegated to a Skill.
 
 ## Report a vulnerability
 
@@ -36,4 +39,7 @@ Deleting the visible file is not sufficient.
 ## Permission boundary
 
 P1 grants no Skill standing merge, tag, Release, Ruleset, Secret, or deployment
-authority. See ADR-0004 and ADR-0005 for the R/W/C and delegation models.
+authority. The dormant merge route is constrained by ADR-0009 and remains
+unusable until the protected Environment, canonical workflow, negative tests,
+and per-action approval loop are activated and verified in separate stages. See
+ADR-0004 and ADR-0005 for the R/W/C and delegation models.
