@@ -34,6 +34,7 @@ ENVIRONMENT_NAME = "c-authorization"
 REQUIRED_CHECK_NAME = "governance-baseline"
 REQUIRED_CHECK_APP_ID = 15368
 MAX_RUN_AGE_SECONDS = 600
+WAIT_TIMER_MINUTES = 1
 SCHEMA_VERSION = "c-authorization/v1"
 OPERATION_TYPE = "merge-exact-pr"
 MERGE_METHOD = "squash"
@@ -495,7 +496,7 @@ def _validate_environment(payload: object, approval_environment_id: int) -> None
             "environment_configuration_mismatch",
             "The protected Environment name does not match.",
         )
-    if "can_admins_bypass" in environment and environment["can_admins_bypass"] is not False:
+    if environment.get("can_admins_bypass") is not False:
         raise BrokerFailure(
             "environment_configuration_mismatch",
             "The Environment reports that administrator bypass is enabled.",
@@ -506,8 +507,8 @@ def _validate_environment(payload: object, approval_environment_id: int) -> None
         code="environment_configuration_mismatch",
     )
     if branch_policy != {
-        "protected_branches": True,
-        "custom_branch_policies": False,
+        "protected_branches": False,
+        "custom_branch_policies": True,
     }:
         raise BrokerFailure(
             "environment_configuration_mismatch",
@@ -526,7 +527,10 @@ def _validate_environment(payload: object, approval_environment_id: int) -> None
             "The Environment has an unexpected protection rule.",
         )
     wait_rules = [rule for rule in rules if rule.get("type") == "wait_timer"]
-    if len(wait_rules) > 1 or any(rule.get("wait_timer") != 0 for rule in wait_rules):
+    if (
+        len(wait_rules) != 1
+        or wait_rules[0].get("wait_timer") != WAIT_TIMER_MINUTES
+    ):
         raise BrokerFailure(
             "environment_configuration_mismatch", "The Environment wait timer has drifted."
         )
@@ -566,6 +570,47 @@ def _validate_environment(payload: object, approval_environment_id: int) -> None
             "environment_configuration_mismatch",
             "The Environment required reviewer has drifted.",
         )
+
+
+def _validate_deployment_branch_policies(payload: object) -> None:
+    policies_payload = _mapping(payload, code="deployment_branch_policy_invalid")
+    if _required_int(
+        policies_payload, "total_count", "deployment_branch_policy_mismatch"
+    ) != 1:
+        raise BrokerFailure(
+            "deployment_branch_policy_mismatch",
+            "Exactly one deployment branch policy is required.",
+        )
+    policies = _list(
+        policies_payload.get("branch_policies"),
+        code="deployment_branch_policy_invalid",
+    )
+    if len(policies) != 1:
+        raise BrokerFailure(
+            "deployment_branch_policy_mismatch",
+            "Exactly one deployment branch policy is required.",
+        )
+    policy = _mapping(policies[0], code="deployment_branch_policy_invalid")
+    if (
+        _required_int(policy, "id", "deployment_branch_policy_invalid") <= 0
+        or policy.get("name") != DEFAULT_BRANCH
+        or policy.get("type") != "branch"
+    ):
+        raise BrokerFailure(
+            "deployment_branch_policy_mismatch",
+            "The deployment branch policy must match only the main branch.",
+        )
+
+
+def _validate_empty_collection(
+    payload: object, *, collection_key: str, code: str, label: str
+) -> None:
+    collection_payload = _mapping(payload, code=code)
+    if _required_int(collection_payload, "total_count", code) != 0:
+        raise BrokerFailure(code, f"The Environment {label} collection must be empty.")
+    items = _list(collection_payload.get(collection_key), code=code)
+    if items:
+        raise BrokerFailure(code, f"The Environment {label} collection must be empty.")
 
 
 def _validate_branch(payload: object, expected_base_sha: str) -> None:
@@ -824,6 +869,28 @@ def _consume(
     _validate_environment(
         client.get(f"repos/{REPOSITORY}/environments/{ENVIRONMENT_NAME}"),
         approval_environment_id,
+    )
+    _validate_deployment_branch_policies(
+        client.get(
+            f"repos/{REPOSITORY}/environments/{ENVIRONMENT_NAME}"
+            "/deployment-branch-policies?per_page=100"
+        )
+    )
+    _validate_empty_collection(
+        client.get(
+            f"repos/{REPOSITORY}/environments/{ENVIRONMENT_NAME}/secrets"
+        ),
+        collection_key="secrets",
+        code="environment_secrets_not_empty",
+        label="Secret",
+    )
+    _validate_empty_collection(
+        client.get(
+            f"repos/{REPOSITORY}/environments/{ENVIRONMENT_NAME}/variables"
+        ),
+        collection_key="variables",
+        code="environment_variables_not_empty",
+        label="Variable",
     )
     _validate_branch(
         client.get(f"repos/{REPOSITORY}/branches/{DEFAULT_BRANCH}"),

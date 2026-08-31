@@ -19,3 +19,13 @@ release-please after the P5 release path is accepted.
   and official Google engineering sources.
 - Critical route assessment of `mattpocock/skills` model-invoked engineering
   Skills and Anthropic's AI-Native SDLC loop, with a canonical domain glossary.
+
+### Changed
+
+- Correct the protected `c-authorization` Environment contract to GitHub's
+  minimum enabled wait timer of one minute and require that rule during Broker
+  readback.
+- Replace ineffective protected-branch inference with one exact custom `main`
+  deployment branch policy and verify it before every Broker effect.
+- Fail closed when administrator-bypass evidence is missing or enabled, or when
+  any Environment Secret or Variable appears before a Broker effect.

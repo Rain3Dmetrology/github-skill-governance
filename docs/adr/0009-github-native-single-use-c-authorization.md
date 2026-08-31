@@ -1,6 +1,6 @@
 # ADR-0009: GitHub-native single-use C authorization
 
-- Status: Accepted architecture; remote activation pending
+- Status: Accepted architecture; Environment active; workflow pending
 - Date: 2026-08-31
 - Issue: [#1](https://github.com/Rain3Dmetrology/github-skill-governance/issues/1)
 
@@ -48,6 +48,18 @@ and repository policy at the approved revision.
 The exact approval comment is `APPROVE-C1 sha256:<request-digest>`. The digest
 uses canonical JSON and includes `run_id` and `run_attempt`. Only attempt 1 is
 accepted, and the request expires after 600 seconds.
+
+The Environment enforces a one-minute wait timer. GitHub's enabled wait-timer
+control accepts a minimum of one minute; the delay is therefore an explicit
+protection rule rather than a fabricated zero-minute rule. The ten-minute
+request expiry remains unchanged.
+
+Deployment access uses custom branch policies with exactly one rule named
+`main` and typed as a branch. `Protected branches only` is rejected here:
+GitHub reports that the repository's Ruleset is not a classic branch protection
+rule and would therefore allow every branch to deploy to the Environment.
+Every consume attempt also requires an explicit `can_admins_bypass=false`
+readback and empty Environment Secret and Variable inventories.
 
 There is no generic API route, arbitrary endpoint, arbitrary request body,
 shell fragment, matrix, reusable action, or second C operation behind the same

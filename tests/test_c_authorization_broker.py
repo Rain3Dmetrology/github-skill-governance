@@ -59,7 +59,13 @@ class FakeGitHubClient:
         ambiguous_merge: bool = False,
         reconcile_as_merged: bool = False,
         environment_reviewer_id: int = broker.REVIEWER_ID,
-        environment_wait_timer: int = 0,
+        environment_wait_timer: int = broker.WAIT_TIMER_MINUTES,
+        environment_can_admins_bypass: bool | None = False,
+        environment_secret_names: tuple[str, ...] = (),
+        environment_variable_names: tuple[str, ...] = (),
+        deployment_policy_name: str = broker.DEFAULT_BRANCH,
+        deployment_policy_type: str = "branch",
+        deployment_policy_count: int = 1,
         mergeable: bool | None = True,
         merge_response_sha: str = MERGE_SHA,
         merge_parent_sha: str = BASE_SHA,
@@ -84,6 +90,12 @@ class FakeGitHubClient:
         self.reconcile_as_merged = reconcile_as_merged
         self.environment_reviewer_id = environment_reviewer_id
         self.environment_wait_timer = environment_wait_timer
+        self.environment_can_admins_bypass = environment_can_admins_bypass
+        self.environment_secret_names = environment_secret_names
+        self.environment_variable_names = environment_variable_names
+        self.deployment_policy_name = deployment_policy_name
+        self.deployment_policy_type = deployment_policy_type
+        self.deployment_policy_count = deployment_policy_count
         self.mergeable = mergeable
         self.merge_response_sha = merge_response_sha
         self.merge_parent_sha = merge_parent_sha
@@ -167,15 +179,51 @@ class FakeGitHubClient:
                         "wait_timer": self.environment_wait_timer,
                     }
                 )
-            return {
+            environment_payload: dict[str, object] = {
                 "id": 24680,
                 "name": broker.ENVIRONMENT_NAME,
                 "protection_rules": rules,
                 "deployment_branch_policy": {
-                    "protected_branches": True,
-                    "custom_branch_policies": False,
+                    "protected_branches": False,
+                    "custom_branch_policies": True,
                 },
             }
+            if self.environment_can_admins_bypass is not None:
+                environment_payload["can_admins_bypass"] = (
+                    self.environment_can_admins_bypass
+                )
+            return environment_payload
+        if endpoint == (
+            f"repos/{broker.REPOSITORY}/environments/{broker.ENVIRONMENT_NAME}"
+            "/deployment-branch-policies?per_page=100"
+        ):
+            policies = [
+                {
+                    "id": 24681 + index,
+                    "name": self.deployment_policy_name,
+                    "type": self.deployment_policy_type,
+                }
+                for index in range(self.deployment_policy_count)
+            ]
+            return {
+                "total_count": self.deployment_policy_count,
+                "branch_policies": policies,
+            }
+        if endpoint == (
+            f"repos/{broker.REPOSITORY}/environments/{broker.ENVIRONMENT_NAME}"
+            "/secrets"
+        ):
+            secrets = [{"name": name} for name in self.environment_secret_names]
+            return {"total_count": len(secrets), "secrets": secrets}
+        if endpoint == (
+            f"repos/{broker.REPOSITORY}/environments/{broker.ENVIRONMENT_NAME}"
+            "/variables"
+        ):
+            variables = [
+                {"name": name, "value": "not-sensitive"}
+                for name in self.environment_variable_names
+            ]
+            return {"total_count": len(variables), "variables": variables}
         if endpoint == f"repos/{broker.REPOSITORY}/branches/{broker.DEFAULT_BRANCH}":
             effect_merged = self.merged or (
                 self.ambiguous_merge and self.reconcile_as_merged and bool(self.put_calls)
@@ -441,7 +489,14 @@ class AuthorizationBrokerTests(unittest.TestCase):
         manifest = build_manifest()
         scenarios = {
             "reviewer": FakeGitHubClient(manifest, environment_reviewer_id=999),
+            "missing_wait_timer": FakeGitHubClient(manifest, environment_wait_timer=0),
             "wait_timer": FakeGitHubClient(manifest, environment_wait_timer=5),
+            "admin_bypass": FakeGitHubClient(
+                manifest, environment_can_admins_bypass=True
+            ),
+            "admin_bypass_missing": FakeGitHubClient(
+                manifest, environment_can_admins_bypass=None
+            ),
         }
         for label, client in scenarios.items():
             with self.subTest(label=label):
@@ -449,6 +504,48 @@ class AuthorizationBrokerTests(unittest.TestCase):
                 self.assertEqual(result["state"], "ABORTED_PRE_EFFECT")
                 self.assertIn(
                     "environment_configuration_mismatch",
+                    [item["code"] for item in result["errors"]],
+                )
+                self.assertEqual(client.put_calls, [])
+
+    def test_environment_secrets_or_variables_fail_before_merge(self) -> None:
+        manifest = build_manifest()
+        scenarios = {
+            "secret": FakeGitHubClient(
+                manifest, environment_secret_names=("UNEXPECTED",)
+            ),
+            "variable": FakeGitHubClient(
+                manifest, environment_variable_names=("UNEXPECTED",)
+            ),
+        }
+        for label, client in scenarios.items():
+            with self.subTest(label=label):
+                result = broker.consume(manifest, client, now=NOW)
+                self.assertEqual(result["state"], "ABORTED_PRE_EFFECT")
+                self.assertIn(
+                    f"environment_{label}s_not_empty",
+                    [item["code"] for item in result["errors"]],
+                )
+                self.assertEqual(client.put_calls, [])
+
+    def test_deployment_branch_policy_drift_fails_before_merge(self) -> None:
+        manifest = build_manifest()
+        scenarios = {
+            "missing": FakeGitHubClient(manifest, deployment_policy_count=0),
+            "extra": FakeGitHubClient(manifest, deployment_policy_count=2),
+            "wrong_name": FakeGitHubClient(
+                manifest, deployment_policy_name="feature"
+            ),
+            "tag_not_branch": FakeGitHubClient(
+                manifest, deployment_policy_type="tag"
+            ),
+        }
+        for label, client in scenarios.items():
+            with self.subTest(label=label):
+                result = broker.consume(manifest, client, now=NOW)
+                self.assertEqual(result["state"], "ABORTED_PRE_EFFECT")
+                self.assertIn(
+                    "deployment_branch_policy_mismatch",
                     [item["code"] for item in result["errors"]],
                 )
                 self.assertEqual(client.put_calls, [])

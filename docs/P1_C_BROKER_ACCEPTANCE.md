@@ -2,7 +2,8 @@
 
 - Started: 2026-08-31
 - Issue: [#1](https://github.com/Rain3Dmetrology/github-skill-governance/issues/1)
-- Current state: PR-B0 implementation in progress; no C workflow active
+- Current state: PR-B0 merged; Environment activated and read back; no C
+  workflow active
 
 This record separates architecture, installation, remote activation, effect,
 and post-effect evidence. An unchecked item is not an implied pass.
@@ -30,13 +31,21 @@ The pre-commit risk review and its resolved base-race finding are recorded in
 
 ## Environment activation — separate C authorization
 
-- [ ] The maintainer provides fresh adjacent authorization for the exact
+- [x] The maintainer provides fresh adjacent authorization for the exact
   Environment mutation.
-- [ ] API readback matches repository ID `1350230486`, reviewer ID `79391663`,
-  wait timer 0, self-review allowed, and protected branches only.
-- [ ] Environment Secret count is zero.
-- [ ] The maintainer confirms in the GitHub UI that administrator bypass is
+- [x] API readback matches repository ID `1350230486`, reviewer ID `79391663`,
+  wait timer 1, self-review allowed, and one custom `main` branch policy.
+- [x] Environment Secret and Variable counts are zero.
+- [x] The maintainer confirms in the GitHub UI that administrator bypass is
   disabled.
+- [x] Replace ineffective `protected_branches=true` with one custom deployment
+  branch policy matching only branch `main`.
+
+The API mutations, UI assertion, reviewer restoration, and branch-scope
+remediation are recorded in
+[`P1_C_ENVIRONMENT_ACTIVATION_2026-08-31.md`](./evidence/P1_C_ENVIRONMENT_ACTIVATION_2026-08-31.md).
+The correction diff, runtime hardening, and W-action decision are recorded in
+[`P1_C_ENVIRONMENT_REVIEW_PACK_2026-08-31.md`](./evidence/P1_C_ENVIRONMENT_REVIEW_PACK_2026-08-31.md).
 
 ## PR-B1 — canonical route workflow
 

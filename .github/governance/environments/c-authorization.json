@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "desired-not-applied",
+  "status": "environment-active-workflow-absent",
   "repository": {
     "id": 1350230486,
     "fullName": "Rain3Dmetrology/github-skill-governance"
@@ -8,7 +8,7 @@
   "environment": {
     "name": "c-authorization",
     "apiPayload": {
-      "wait_timer": 0,
+      "wait_timer": 1,
       "prevent_self_review": false,
       "reviewers": [
         {
@@ -17,8 +17,8 @@
         }
       ],
       "deployment_branch_policy": {
-        "protected_branches": true,
-        "custom_branch_policies": false
+        "protected_branches": false,
+        "custom_branch_policies": true
       }
     },
     "expectedReviewer": {
@@ -26,6 +26,13 @@
       "id": 79391663
     },
     "expectedSecrets": [],
+    "expectedVariables": [],
+    "expectedDeploymentBranchPolicies": [
+      {
+        "name": "main",
+        "type": "branch"
+      }
+    ],
     "manualUiAssertions": {
       "administratorsCanBypassProtectionRules": false
     }
