@@ -50,6 +50,9 @@ Receipts are typed and kept separate:
 | Approval for different parameters | Comment must equal `APPROVE-C1 sha256:<canonical digest>` | `ABORTED_PRE_EFFECT` |
 | Same-run replay | Digest binds run ID and attempt; attempt must equal 1 | `ABORTED_PRE_EFFECT` |
 | Old approval | Run age and manifest expiry are at most 600 seconds | `ABORTED_PRE_EFFECT` |
+| Environment timer removed or changed | Require exactly one one-minute wait-timer rule in live API readback | `ABORTED_PRE_EFFECT` |
+| Another branch or tag gains Environment access | Require custom policies plus exactly one `main` policy typed as `branch` | `ABORTED_PRE_EFFECT` |
+| Administrator bypass, Secret, or Variable drift | Require explicit bypass=false and empty Environment inventories before effect | `ABORTED_PRE_EFFECT` |
 | PR or main changes while waiting | Re-fetch repository, base SHA, PR head/base/state, and check suite after approval; prove the squash commit's sole parent is the authorized base | `ABORTED_PRE_EFFECT` or `RECOVERY_REQUIRED` |
 | Multiple effects behind one approval | One fixed route and at most one mutation request; no matrix or reusable/local action | validator failure |
 | Generic API escalation | No endpoint, method, shell, GraphQL, or free-form JSON input | input rejection |

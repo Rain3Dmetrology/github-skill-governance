@@ -737,7 +737,7 @@ def validate_broker_bootstrap_contract(
 
     expected_environment = {
         "schemaVersion": 1,
-        "status": "desired-not-applied",
+        "status": "environment-active-workflow-absent",
         "repository": {
             "id": 1350230486,
             "fullName": "Rain3Dmetrology/github-skill-governance",
@@ -745,16 +745,20 @@ def validate_broker_bootstrap_contract(
         "environment": {
             "name": "c-authorization",
             "apiPayload": {
-                "wait_timer": 0,
+                "wait_timer": 1,
                 "prevent_self_review": False,
                 "reviewers": [{"type": "User", "id": 79391663}],
                 "deployment_branch_policy": {
-                    "protected_branches": True,
-                    "custom_branch_policies": False,
+                    "protected_branches": False,
+                    "custom_branch_policies": True,
                 },
             },
             "expectedReviewer": {"login": "Rain3Dmetrology", "id": 79391663},
             "expectedSecrets": [],
+            "expectedVariables": [],
+            "expectedDeploymentBranchPolicies": [
+                {"name": "main", "type": "branch"}
+            ],
             "manualUiAssertions": {"administratorsCanBypassProtectionRules": False},
         },
         "activationSafety": {
@@ -764,7 +768,7 @@ def validate_broker_bootstrap_contract(
         },
     }
     if environment != expected_environment:
-        findings.append(Finding("broker-environment-desired-state", BROKER_ENVIRONMENT_PATH, "must exactly match the frozen PR-B0 desired state"))
+        findings.append(Finding("broker-environment-desired-state", BROKER_ENVIRONMENT_PATH, "must exactly match the tracked activation state"))
 
     expected_cli_contract = {
         "schemaVersion": 1,

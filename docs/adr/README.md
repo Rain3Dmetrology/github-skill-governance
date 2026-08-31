@@ -10,7 +10,7 @@
 | [0006](./0006-normalized-permission-schema.md) | One fail-closed schema for R/W/C permissions | Accepted |
 | [0007](./0007-p1-deterministic-platform-enforcement.md) | Deterministic CI, preflight, and GitHub platform controls | Accepted |
 | [0008](./0008-p1-platform-enforcement-accepted.md) | P1 remote platform enforcement accepted with explicit residuals | Accepted |
-| [0009](./0009-github-native-single-use-c-authorization.md) | Protected GitHub Environment plus exact-digest, single-route C authorization | Accepted architecture; activation pending |
+| [0009](./0009-github-native-single-use-c-authorization.md) | Protected GitHub Environment plus exact-digest, single-route C authorization | Environment active; workflow pending |
 
 Accepted ADRs are immutable decisions. A later change creates a new ADR that
 supersedes the old one; it does not silently rewrite history.
