@@ -9,7 +9,8 @@
 <!-- /readme-contract:section:value-proposition -->
 
 > 当前状态：**P1 平台强制已生效**。GitHub 回读与被阻断的负向 PR 已证明
-> required check、main 保护和全标签冻结。发布权与无人值守 C 类权限仍禁用。
+> required check、main 保护和全标签冻结。PR-B0 已冻结休眠的精确 PR Broker
+> 契约；受保护 Environment 与写工作流均未启用，发布权仍禁用。
 
 <!-- readme-contract:section:why-this-repo -->
 ## 为什么选择这个仓库
@@ -34,6 +35,10 @@ P0 基线是采用独立重写策略的新 Apache-2.0 仓库。来源日志记�
 <!-- readme-contract:claim:claim.p1-platform-enforcement -->
 P1 平台控制已生效：`main` 只能通过带严格治理检查的 PR 更新，所有标签名在
 P5 前均被冻结。该状态不向任何 Skill 授予常驻变更权或发布权。
+
+<!-- readme-contract:claim:claim.c-authorization-broker-bootstrap -->
+仓库现已包含休眠的单路由 C 授权契约和经过本地测试的精确 squash merge
+执行器。它尚未远端启用：受保护 Environment 与标准工作流属于后续独立 Gate。
 <!-- /readme-contract:section:why-this-repo -->
 
 <!-- readme-contract:section:quick-start -->
@@ -45,7 +50,8 @@ P1 是已生效的治理强制，不是安装器或发布器：
 1. 运行：python3 -m unittest discover -s tests -p 'test_*.py'
 2. 运行：python3 scripts/validate_governance.py --root .
 3. 查看：python3 scripts/github_preflight.py --help
-4. 修改已生效控制前审核 docs/P1_ACCEPTANCE.md
+4. 查看：python3 scripts/c_authorization_broker.py --help
+5. 修改已生效控制前审核 docs/P1_C_BROKER_ACCEPTANCE.md
 ```
 
 不要从该 revision 安装 AI 审查器或启用发布自动化。
@@ -59,7 +65,7 @@ P1 是已生效的治理强制，不是安装器或发布器：
 
 | 方案 | 适合选择的条件 | 不该选择的条件 | 当前取舍 | 证据 |
 |---|---|---|---|---|
-| 本治理仓库 | 需要在自动化前冻结许可证、发布权威、双语 README 和权限契约 | 今天就需要已验证的多宿主包或可用发布路径 | P1 平台控制已强制；多宿主分发、可复用 C 授权与发布仍未交付 | [当前策略与验收](./docs/comparisons/P0_ALTERNATIVES.md#this-p0-baseline) |
+| 本治理仓库 | 需要在自动化前冻结许可证、发布权威、双语 README 和权限契约 | 今天就需要已验证的多宿主包或可用发布路径 | P1 控制已强制且单路由 Broker 处于休眠；远端 C 授权、多宿主分发与发布仍未交付 | [当前策略与验收](./docs/comparisons/P0_ALTERNATIVES.md#this-p0-baseline) |
 | 人工监督的单体发布提示词 | 可信维护者需要人工监督的检查清单，并接受其仓库许可证 | 需要 OSI 开源核心、确定性 Gate 或已验证多宿主使用 | 配置更少；策略与写命令仍处于同一指令面 | [已审查旧仓快照](./docs/comparisons/P0_ALTERNATIVES.md#legacy-release-prompt) |
 | 每个智能体的非托管副本 | 内容临时且不需要共享期望状态 | 必须跨宿主复现或审计同一 revision | 无中央配置；每个操作者自行跟踪版本并协调收敛 | [对比范围定义](./docs/comparisons/P0_ALTERNATIVES.md#unmanaged-per-agent-copies) |
 
@@ -72,7 +78,7 @@ P1 是已生效的治理强制，不是安装器或发布器：
 
 | 限制 | 对用户的影响 |
 |---|---|
-| 缺少可复用 C 授权 broker | 不允许智能体无人值守执行 C 类变更 |
+| C Broker 仅有休眠本地契约 | Environment 激活和远端 canary 通过前，不能调度 C 类变更 |
 | 发布自动化被禁用 | 尚无受支持的 tag 或 GitHub Release 路径 |
 | 没有宿主 adapter 与 smoke test | 当前不声称已验证任何智能体平台 |
 | 只有一名维护者负责审查 | CODEOWNERS 可以路由审查，但不能提供独立批准 |
@@ -83,7 +89,7 @@ P1 是已生效的治理强制，不是安装器或发布器：
 
 | 限制 | 立即措施 | 永久方案 | 状态 |
 |---|---|---|---|
-| 没有可复用 C 授权 broker | C 类动作保持人类治理并拒绝可复用回执字符串 | 可信、动作绑定、原子消费的授权机制 | 开放：Issue #1 |
+| Broker 尚未远端启用 | C 动作继续由人类紧邻授权并拒绝可复用回执字符串 | 受保护 Environment、标准单路由工作流、重放测试与效果回读 | PR-B0；Issue #1 仍开放 |
 | 没有发布路径 | 不创建 tag 或 Release | P5 Draft-first 发布 Saga | 策略禁用 |
 | 没有已验证宿主 | 不声明平台兼容性 | P6 exact-SHA 双宿主 canary | 未开始 |
 | 没有独立审查者 | 如实记录维护者自审，审批数保持为 0 | 强制独立批准前先增加第二名可信人类 | 开放限制 |
@@ -108,6 +114,7 @@ P1 不验证任何运行时或智能体宿主。未来包格式采用开放 Agen
 | `claim.readme-contract-frozen` | `readme-contract.json`、ADR-0003、两份 README |
 | `claim.permission-boundaries-frozen` | `repo-policy.yaml`、`owners.yaml`、ADR-0004、ADR-0005、ADR-0006 |
 | `claim.p1-platform-enforcement` | `P1_ACCEPTANCE.md`、ADR-0008、远端 active 回执 |
+| `claim.c-authorization-broker-bootstrap` | Broker schema 与执行器、`P1_C_BROKER_ACCEPTANCE.md`、ADR-0009、威胁模型 |
 | `claim.p0-alternatives-comparison` | `P0_ALTERNATIVES.md`，评估于 2026-08-30 |
 
 机器可读声明映射位于 [`docs/claims.yaml`](./docs/claims.yaml)。
@@ -120,10 +127,11 @@ P1 不验证任何运行时或智能体宿主。未来包格式采用开放 Agen
 |---|---|---|
 | P0 | 已授权仓库 bootstrap | 许可证、版本权威、README 契约和 R/W/C 权限冻结 |
 | P1 | P0 验收 | GitHub 平台强制与最小权限检查；已验收 |
-| P2 | P1 已强制 | 确定性 README、发布状态和分发校验器 |
-| P3+ | 上一阶段证据存在 | Core Skills、Draft 发布 Saga、双宿主 canary |
+| P1-C | P1 已强制 | 激活并远端验证精确 PR C Broker；Issue #1 |
+| P2a | P1-C 已验证 | 确定性跨仓库双语 README Skill，默认 dry-run、仅 PR |
+| P2b+ | P2a 已有证据 | 发布状态与分发校验器，再进入 Core Skills 与发布 Saga |
 
-P0 与 P1 均已验收。P2 及以后仍是决策 Gate，不是交付声明。
+P0 与 P1 平台强制已验收。P1-C、P2 及以后仍是决策 Gate，不是交付声明。
 <!-- /readme-contract:section:roadmap -->
 
 <!-- readme-contract:section:security -->
@@ -133,6 +141,7 @@ P0 与 P1 均已验收。P2 及以后仍是决策 Gate，不是交付声明。
 [`SECURITY.md`](./SECURITY.md)。P1 不向任何 Skill 委派常驻的 merge、tag、
 Release、Ruleset、Secret 或生产部署权限。经人类授权的任务执行者只能执行
 ADR-0005 明确限定的 C 类动作。
+休眠的 Broker 代码不会改变该权限边界。
 <!-- /readme-contract:section:security -->
 
 <!-- readme-contract:section:license -->

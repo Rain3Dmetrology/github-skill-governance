@@ -54,6 +54,9 @@ class GovernanceValidatorTests(unittest.TestCase):
             "tests/test_validate_governance.py",
             "tests/fixtures/validator/cases.json",
             ".github/governance/repo-policy.schema.json",
+            validator.BROKER_SCHEMA_PATH,
+            validator.BROKER_CLI_PATH,
+            validator.BROKER_ENVIRONMENT_PATH,
             ".github/CODEOWNERS",
             validator.MAIN_RULESET_PATH,
             validator.TAG_RULESET_PATH,
@@ -260,6 +263,46 @@ class GovernanceValidatorTests(unittest.TestCase):
         result = validator.validate_repository(root, tracked)
         self.assertFalse(result["ok"])
         self.assertIn("ruleset-tag-state", self.codes(result))
+
+    def test_broker_manifest_contract_drift_fails_closed(self) -> None:
+        root, tracked = self.copy_repo()
+        schema_path = root / validator.BROKER_SCHEMA_PATH
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        schema["properties"]["authorization"]["properties"]["max_run_age_seconds"]["const"] = 3600
+        schema_path.write_text(json.dumps(schema, indent=2) + "\n", encoding="utf-8")
+        result = validator.validate_repository(root, tracked)
+        self.assertFalse(result["ok"])
+        self.assertIn("broker-schema-invariant", self.codes(result))
+
+    def test_broker_environment_drift_fails_closed(self) -> None:
+        root, tracked = self.copy_repo()
+        environment_path = root / validator.BROKER_ENVIRONMENT_PATH
+        environment = json.loads(environment_path.read_text(encoding="utf-8"))
+        environment["environment"]["apiPayload"]["prevent_self_review"] = True
+        environment_path.write_text(json.dumps(environment, indent=2) + "\n", encoding="utf-8")
+        result = validator.validate_repository(root, tracked)
+        self.assertFalse(result["ok"])
+        self.assertIn("broker-environment-desired-state", self.codes(result))
+
+    def test_broker_cli_contract_drift_fails_closed(self) -> None:
+        root, tracked = self.copy_repo()
+        contract_path = root / validator.BROKER_CLI_PATH
+        contract = json.loads(contract_path.read_text(encoding="utf-8"))
+        contract["commands"]["consume"]["mutation"] = "generic-api"
+        contract_path.write_text(json.dumps(contract, indent=2) + "\n", encoding="utf-8")
+        result = validator.validate_repository(root, tracked)
+        self.assertFalse(result["ok"])
+        self.assertIn("broker-cli-contract", self.codes(result))
+
+    def test_broker_workflow_cannot_activate_before_environment(self) -> None:
+        root, tracked = self.copy_repo()
+        workflow = root / validator.BROKER_WORKFLOW_PATH
+        workflow.parent.mkdir(parents=True, exist_ok=True)
+        workflow.write_text("name: forbidden-bootstrap\non: workflow_dispatch\n", encoding="utf-8")
+        tracked.append(validator.BROKER_WORKFLOW_PATH)
+        result = validator.validate_repository(root, tracked)
+        self.assertFalse(result["ok"])
+        self.assertTrue({"broker-premature-activation", "workflow-inventory"}.issubset(self.codes(result)))
 
     def test_yaml_equivalent_workflow_rewrites_fail_closed(self) -> None:
         rewrites = {

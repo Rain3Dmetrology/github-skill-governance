@@ -2,9 +2,12 @@
 
 /README.md @Rain3Dmetrology
 /README.zh-CN.md @Rain3Dmetrology
+/CONTEXT.md @Rain3Dmetrology
 /SECURITY.md @Rain3Dmetrology
 /.github/governance/ @Rain3Dmetrology
 /.github/workflows/ @Rain3Dmetrology
 /docs/adr/ @Rain3Dmetrology
+/docs/research/ @Rain3Dmetrology
+/docs/threat-models/ @Rain3Dmetrology
 /scripts/ @Rain3Dmetrology
 /tests/ @Rain3Dmetrology

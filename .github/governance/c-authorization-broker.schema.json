@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Rain3Dmetrology/github-skill-governance/raw/main/.github/governance/c-authorization-broker.schema.json",
+  "title": "C Authorization Broker Request Manifest",
+  "description": "Closed contract for the dormant merge-exact-pr route. This schema does not itself grant authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "repository",
+    "run",
+    "workflow",
+    "operation",
+    "authorization"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "c-authorization/v1"
+    },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "full_name",
+        "default_branch"
+      ],
+      "properties": {
+        "id": {
+          "const": 1350230486
+        },
+        "full_name": {
+          "const": "Rain3Dmetrology/github-skill-governance"
+        },
+        "default_branch": {
+          "const": "main"
+        }
+      }
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "attempt",
+        "event"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "attempt": {
+          "const": 1
+        },
+        "event": {
+          "const": "workflow_dispatch"
+        }
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "ref",
+        "sha"
+      ],
+      "properties": {
+        "path": {
+          "const": ".github/workflows/c-merge-exact-pr.yml"
+        },
+        "ref": {
+          "const": "Rain3Dmetrology/github-skill-governance/.github/workflows/c-merge-exact-pr.yml@refs/heads/main"
+        },
+        "sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        }
+      }
+    },
+    "operation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "pull_request_number",
+        "base_ref",
+        "expected_base_sha",
+        "expected_head_sha",
+        "merge_method",
+        "required_check"
+      ],
+      "properties": {
+        "type": {
+          "const": "merge-exact-pr"
+        },
+        "pull_request_number": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "base_ref": {
+          "const": "refs/heads/main"
+        },
+        "expected_base_sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "expected_head_sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "merge_method": {
+          "const": "squash"
+        },
+        "required_check": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "app_id"
+          ],
+          "properties": {
+            "name": {
+              "const": "governance-baseline"
+            },
+            "app_id": {
+              "const": 15368
+            }
+          }
+        }
+      }
+    },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "environment",
+        "reviewer",
+        "max_run_age_seconds"
+      ],
+      "properties": {
+        "environment": {
+          "const": "c-authorization"
+        },
+        "reviewer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "login",
+            "id"
+          ],
+          "properties": {
+            "login": {
+              "const": "Rain3Dmetrology"
+            },
+            "id": {
+              "const": 79391663
+            }
+          }
+        },
+        "max_run_age_seconds": {
+          "const": 600
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "status": "dormant-no-workflow",
+  "script": "scripts/c_authorization_broker.py",
+  "manifestSchema": ".github/governance/c-authorization-broker.schema.json",
+  "approvalCommentFormat": "APPROVE-C1 sha256:<64-lowercase-hex>",
+  "digest": "sha256(utf8(json-sort-keys-no-whitespace-ensure-ascii-false))",
+  "credentialInput": {
+    "environmentVariable": "GITHUB_TOKEN",
+    "commandLineAllowed": false,
+    "fileInputAllowed": false
+  },
+  "commands": {
+    "prepare": {
+      "network": "none",
+      "mutation": "none",
+      "successStates": [
+        "PREPARED"
+      ]
+    },
+    "consume": {
+      "network": "api.github.com",
+      "mutation": "one-conditional-squash-merge",
+      "successStates": [
+        "COMMITTED"
+      ],
+      "failureStates": [
+        "ABORTED_PRE_EFFECT",
+        "RECOVERY_REQUIRED"
+      ]
+    },
+    "verify": {
+      "network": "api.github.com",
+      "mutation": "none",
+      "successStates": [
+        "VERIFIED_COMMITTED"
+      ],
+      "failureStates": [
+        "VERIFIED_NOT_COMMITTED",
+        "RECOVERY_REQUIRED"
+      ]
+    }
+  },
+  "exitCodes": {
+    "0": "requested state verified",
+    "1": "failed or proven not committed",
+    "2": "effect state requires reconciliation"
+  },
+  "prepareSuccessFields": [
+    "approval_comment",
+    "canonical_manifest",
+    "errors",
+    "manifest",
+    "ok",
+    "phase",
+    "request_digest",
+    "state"
+  ],
+  "effectSuccessFields": [
+    "errors",
+    "ok",
+    "phase",
+    "receipt",
+    "request_digest",
+    "state"
+  ],
+  "receiptFields": [
+    "expected_base_sha",
+    "expected_head_sha",
+    "merge_commit_sha",
+    "operation",
+    "pull_request_number",
+    "reconciled",
+    "repository_id",
+    "run_attempt",
+    "run_id"
+  ],
+  "failureRequiredFields": [
+    "errors",
+    "ok",
+    "phase",
+    "state"
+  ]
+}
