@@ -1,6 +1,6 @@
 # ADR-0009: GitHub-native single-use C authorization
 
-- Status: Accepted architecture; Environment active; workflow pending
+- Status: Accepted architecture; Environment active; PR-B1 workflow candidate
 - Date: 2026-08-31
 - Issue: [#1](https://github.com/Rain3Dmetrology/github-skill-governance/issues/1)
 
@@ -33,6 +33,7 @@ The first and only supported route is `merge-exact-pr`:
 - the PR must be open, non-draft, and mergeable;
 - the merge method is always squash;
 - the executor issues at most one mutation request;
+- one repository-wide workflow concurrency group serializes Broker runs;
 - readback proves that the squash commit has exactly the authorized base SHA as
   its parent, closing the preflight-to-merge race;
 - a transport-ambiguous result is reconciled by readback and becomes
@@ -44,6 +45,11 @@ The closed request manifest is
 `.github/governance/c-authorization-broker.schema.json`; the workflow revision
 must equal the expected `main` base SHA, which transitively binds the executor
 and repository policy at the approved revision.
+
+PR-B1 adds that path as an exact canonical candidate with a read-only prepare
+job and one Environment-gated consume job. It remains inactive until the PR is
+separately merged and is not accepted as production-ready until remote canaries
+and PR-B2 evidence close Issue #1.
 
 The exact approval comment is `APPROVE-C1 sha256:<request-digest>`. The digest
 uses canonical JSON and includes `run_id` and `run_attempt`. Only attempt 1 is
@@ -59,7 +65,10 @@ Deployment access uses custom branch policies with exactly one rule named
 GitHub reports that the repository's Ruleset is not a classic branch protection
 rule and would therefore allow every branch to deploy to the Environment.
 Every consume attempt also requires an explicit `can_admins_bypass=false`
-readback and empty Environment Secret and Variable inventories.
+readback. Empty Environment Secret and Variable inventories remain external
+activation and closure evidence. The workflow does not reference either
+`secrets.*` or `vars.*`, because `GITHUB_TOKEN` cannot request the
+`Environments: read` permission required to enumerate those inventories.
 
 There is no generic API route, arbitrary endpoint, arbitrary request body,
 shell fragment, matrix, reusable action, or second C operation behind the same
@@ -104,7 +113,8 @@ readback item rather than a fabricated machine guarantee.
 ## Secrets and legacy release Skill
 
 This Broker route requires no repository or Environment Secret. It uses the
-job-scoped `GITHUB_TOKEN` only after Environment approval. It does not grant the
+job-scoped `GITHUB_TOKEN` only after Environment approval. The exact workflow
+never references the `secrets` or `vars` contexts. It does not grant the
 existing `github-release-management` Skill write, tag, or Release authority and
 does not modify that repository.
 

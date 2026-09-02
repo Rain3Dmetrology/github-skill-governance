@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "dormant-no-workflow",
+  "status": "canonical-workflow-candidate",
   "script": "scripts/c_authorization_broker.py",
   "manifestSchema": ".github/governance/c-authorization-broker.schema.json",
   "approvalCommentFormat": "APPROVE-C1 sha256:<64-lowercase-hex>",

@@ -19,6 +19,8 @@ release-please after the P5 release path is accepted.
   and official Google engineering sources.
 - Critical route assessment of `mattpocock/skills` model-invoked engineering
   Skills and Anthropic's AI-Native SDLC loop, with a canonical domain glossary.
+- Canonical two-job C Broker workflow candidate and no-retry operator runbook
+  for one Environment-approved exact squash merge.
 
 ### Changed
 
@@ -28,4 +30,7 @@ release-please after the P5 release path is accepted.
 - Replace ineffective protected-branch inference with one exact custom `main`
   deployment branch policy and verify it before every Broker effect.
 - Fail closed when administrator-bypass evidence is missing or enabled, or when
-  any Environment Secret or Variable appears before a Broker effect.
+  the Environment reviewer, timer, or exact `main` policy drifts.
+- Replace unavailable runtime Environment Secret/Variable enumeration with a
+  canonical workflow that cannot reference either context; keep those empty
+  inventories as external activation and closure evidence.

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "environment-active-workflow-absent",
+  "status": "environment-active-workflow-candidate",
   "repository": {
     "id": 1350230486,
     "fullName": "Rain3Dmetrology/github-skill-governance"

@@ -52,12 +52,16 @@ claims:
       - .github/governance/c-authorization-broker.schema.json
       - .github/governance/c-authorization-broker-cli.json
       - .github/governance/environments/c-authorization.json
+      - .github/workflows/c-merge-exact-pr.yml
       - scripts/c_authorization_broker.py
       - tests/test_c_authorization_broker.py
       - docs/P1_C_BROKER_ACCEPTANCE.md
+      - docs/runbooks/C_AUTHORIZATION_BROKER.md
       - docs/evidence/P1_C_BROKER_LOCAL_CANDIDATE_2026-08-31.md
       - docs/evidence/P1_C_ENVIRONMENT_ACTIVATION_2026-08-31.md
       - docs/evidence/P1_C_ENVIRONMENT_REVIEW_PACK_2026-08-31.md
+      - docs/evidence/P1_C_WORKFLOW_LOCAL_CANDIDATE_2026-09-03.md
+      - docs/evidence/P1_C_WORKFLOW_REVIEW_PACK_2026-09-03.md
       - docs/adr/0009-github-native-single-use-c-authorization.md
       - docs/threat-models/C_AUTHORIZATION_BROKER.md
 

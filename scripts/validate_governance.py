@@ -65,6 +65,131 @@ jobs:
         shell: bash
         run: python3 scripts/validate_governance.py --root .
 """
+EXPECTED_BROKER_WORKFLOW = """name: c-merge-exact-pr
+run-name: "C1 merge PR #${{ inputs.pr_number }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number
+        required: true
+        type: number
+      expected_base_sha:
+        description: Exact current main SHA
+        required: true
+        type: string
+      expected_head_sha:
+        description: Exact pull request head SHA
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: c-merge-exact-pr
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: prepare-c-authorization
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact workflow revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Prepare exact approval digest
+        shell: bash
+        env:
+          BROKER_RUN_ID: ${{ github.run_id }}
+          BROKER_RUN_ATTEMPT: ${{ github.run_attempt }}
+          BROKER_WORKFLOW_REF: ${{ github.workflow_ref }}
+          BROKER_WORKFLOW_SHA: ${{ github.sha }}
+          BROKER_PR_NUMBER: ${{ inputs.pr_number }}
+          BROKER_EXPECTED_BASE_SHA: ${{ inputs.expected_base_sha }}
+          BROKER_EXPECTED_HEAD_SHA: ${{ inputs.expected_head_sha }}
+        run: |
+          set -euo pipefail
+          prepared_path="$RUNNER_TEMP/c-authorization-prepare.json"
+          python3 scripts/c_authorization_broker.py prepare \\
+            --run-id "$BROKER_RUN_ID" \\
+            --run-attempt "$BROKER_RUN_ATTEMPT" \\
+            --workflow-ref "$BROKER_WORKFLOW_REF" \\
+            --workflow-sha "$BROKER_WORKFLOW_SHA" \\
+            --pr-number "$BROKER_PR_NUMBER" \\
+            --expected-base-sha "$BROKER_EXPECTED_BASE_SHA" \\
+            --expected-head-sha "$BROKER_EXPECTED_HEAD_SHA" \\
+            > "$prepared_path"
+          cat "$prepared_path"
+          approval_comment="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["approval_comment"])' "$prepared_path")"
+          request_digest="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["request_digest"])' "$prepared_path")"
+          {
+            printf '## C authorization request\\n\\n'
+            printf 'Approve only this exact comment in the protected Environment gate:\\n\\n'
+            printf '```text\\n%s\\n```\\n\\n' "$approval_comment"
+            printf 'Request digest: `%s`\\n' "$request_digest"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  consume:
+    name: consume-c-authorization
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment:
+      name: c-authorization
+    permissions:
+      actions: read # Run identity, approval history, and Environment readback.
+      checks: read # Exact governance check name, SHA, conclusion, and App ID.
+      contents: write # The merge endpoint's only accepted write permission.
+      pull-requests: read # Exact PR state, base, head, and merge readback.
+    steps:
+      - name: Checkout exact workflow revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Consume authorization and merge exact pull request
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          BROKER_RUN_ID: ${{ github.run_id }}
+          BROKER_RUN_ATTEMPT: ${{ github.run_attempt }}
+          BROKER_WORKFLOW_REF: ${{ github.workflow_ref }}
+          BROKER_WORKFLOW_SHA: ${{ github.sha }}
+          BROKER_PR_NUMBER: ${{ inputs.pr_number }}
+          BROKER_EXPECTED_BASE_SHA: ${{ inputs.expected_base_sha }}
+          BROKER_EXPECTED_HEAD_SHA: ${{ inputs.expected_head_sha }}
+        run: |
+          set -uo pipefail
+          result_path="$RUNNER_TEMP/c-authorization-result.json"
+          set +e
+          python3 scripts/c_authorization_broker.py consume \\
+            --run-id "$BROKER_RUN_ID" \\
+            --run-attempt "$BROKER_RUN_ATTEMPT" \\
+            --workflow-ref "$BROKER_WORKFLOW_REF" \\
+            --workflow-sha "$BROKER_WORKFLOW_SHA" \\
+            --pr-number "$BROKER_PR_NUMBER" \\
+            --expected-base-sha "$BROKER_EXPECTED_BASE_SHA" \\
+            --expected-head-sha "$BROKER_EXPECTED_HEAD_SHA" \\
+            > "$result_path"
+          broker_exit="$?"
+          set -e
+          cat "$result_path"
+          {
+            printf '## C authorization result\\n\\n'
+            printf '```json\\n'
+            cat "$result_path"
+            printf '```\\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$broker_exit"
+"""
 
 
 @dataclass(frozen=True, order=True)
@@ -737,7 +862,7 @@ def validate_broker_bootstrap_contract(
 
     expected_environment = {
         "schemaVersion": 1,
-        "status": "environment-active-workflow-absent",
+        "status": "environment-active-workflow-candidate",
         "repository": {
             "id": 1350230486,
             "fullName": "Rain3Dmetrology/github-skill-governance",
@@ -772,7 +897,7 @@ def validate_broker_bootstrap_contract(
 
     expected_cli_contract = {
         "schemaVersion": 1,
-        "status": "dormant-no-workflow",
+        "status": "canonical-workflow-candidate",
         "script": "scripts/c_authorization_broker.py",
         "manifestSchema": BROKER_SCHEMA_PATH,
         "approvalCommentFormat": "APPROVE-C1 sha256:<64-lowercase-hex>",
@@ -817,9 +942,9 @@ def validate_broker_bootstrap_contract(
         "failureRequiredFields": ["errors", "ok", "phase", "state"],
     }
     if cli_contract != expected_cli_contract:
-        findings.append(Finding("broker-cli-contract", BROKER_CLI_PATH, "must exactly match the frozen PR-B0 command, state, exit-code, and receipt contract"))
-    if (root / BROKER_WORKFLOW_PATH).exists():
-        findings.append(Finding("broker-premature-activation", BROKER_WORKFLOW_PATH, "workflow must remain absent until protected Environment readback is accepted"))
+        findings.append(Finding("broker-cli-contract", BROKER_CLI_PATH, "must exactly match the frozen PR-B1 command, state, exit-code, and receipt contract"))
+    if not (root / BROKER_WORKFLOW_PATH).is_file():
+        findings.append(Finding("broker-workflow-missing", BROKER_WORKFLOW_PATH, "the canonical PR-B1 workflow is required"))
 
 
 SECTION_RE = re.compile(r"<!--\s*readme-contract:section:([a-z0-9-]+)\s*-->(.*?)<!--\s*/readme-contract:section:\1\s*-->", re.DOTALL)
@@ -1139,8 +1264,9 @@ def validate_tracked_content(
         for relative in tracked_paths
         if relative.replace("\\", "/").startswith(".github/workflows/")
     ]
-    if workflow_paths != [WORKFLOW_PATH]:
-        findings.append(Finding("workflow-inventory", ".github/workflows", f"tracked workflows must be exactly [{WORKFLOW_PATH!r}]"))
+    expected_workflows = sorted([WORKFLOW_PATH, BROKER_WORKFLOW_PATH])
+    if workflow_paths != expected_workflows:
+        findings.append(Finding("workflow-inventory", ".github/workflows", f"tracked workflows must be exactly {expected_workflows!r}"))
     for relative in tracked_paths:
         normalized = relative.replace("\\", "/")
         if normalized.startswith(".github/actions/"):
@@ -1185,6 +1311,8 @@ def validate_tracked_content(
         canonical_text = text.replace("\r\n", "\n")
         if normalized == WORKFLOW_PATH and ("\r" in canonical_text or canonical_text != EXPECTED_BASELINE_WORKFLOW):
             findings.append(Finding("workflow-canonical", normalized, "P1 baseline workflow must match the frozen canonical form exactly"))
+        if normalized == BROKER_WORKFLOW_PATH and ("\r" in canonical_text or canonical_text != EXPECTED_BROKER_WORKFLOW):
+            findings.append(Finding("broker-workflow-canonical", normalized, "P1 C Broker workflow must match the frozen canonical form exactly"))
         for use in re.findall(r"(?m)^[ \t]*-?[ \t]*uses:[ \t]*['\"]?([^'\"\s#]+)", text):
             if use.startswith("./"):
                 findings.append(Finding("local-action-forbidden", normalized, f"local action {use!r} is forbidden in P1"))
@@ -1212,7 +1340,8 @@ def validate_tracked_content(
                     break
             if not persist_disabled:
                 findings.append(Finding("workflow-checkout-credentials", normalized, "actions/checkout must set persist-credentials: false"))
-        validate_workflow_permissions(text, normalized, findings)
+        if normalized != BROKER_WORKFLOW_PATH:
+            validate_workflow_permissions(text, normalized, findings)
         if re.search(r"(?mi)^[ \t]*(?:release|registry_package)[ \t]*:", text) or re.search(r"(?mi)^[ \t]*tags(?:-ignore)?[ \t]*:", text):
             findings.append(Finding("workflow-release-trigger", normalized, "release, package, or tag trigger is forbidden before P5"))
 

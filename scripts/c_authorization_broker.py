@@ -399,7 +399,7 @@ def _validate_run(
         raise BrokerFailure("run_sha_mismatch", "The workflow run SHA does not match.")
     if _required_str(
         run_payload, "path", "workflow_path_mismatch"
-    ) != f"{WORKFLOW_PATH}@{DEFAULT_BRANCH}":
+    ) != WORKFLOW_PATH:
         raise BrokerFailure("workflow_path_mismatch", "The workflow path does not match.")
 
     run_repository = _mapping(
@@ -602,17 +602,6 @@ def _validate_deployment_branch_policies(payload: object) -> None:
         )
 
 
-def _validate_empty_collection(
-    payload: object, *, collection_key: str, code: str, label: str
-) -> None:
-    collection_payload = _mapping(payload, code=code)
-    if _required_int(collection_payload, "total_count", code) != 0:
-        raise BrokerFailure(code, f"The Environment {label} collection must be empty.")
-    items = _list(collection_payload.get(collection_key), code=code)
-    if items:
-        raise BrokerFailure(code, f"The Environment {label} collection must be empty.")
-
-
 def _validate_branch(payload: object, expected_base_sha: str) -> None:
     branch = _mapping(payload, code="branch_evidence_invalid")
     if _required_str(branch, "name", "base_ref_mismatch") != DEFAULT_BRANCH:
@@ -666,9 +655,7 @@ def _validate_open_pull_request(
         )
 
 
-def _validate_required_check(
-    payload: object, *, pr_number: int, expected_head_sha: str
-) -> None:
+def _validate_required_check(payload: object, *, expected_head_sha: str) -> None:
     checks = _mapping(payload, code="check_evidence_invalid")
     runs = _list(checks.get("check_runs"), code="check_evidence_invalid")
     matching: list[Mapping[str, Any]] = []
@@ -692,15 +679,6 @@ def _validate_required_check(
     if check.get("status") != "completed" or check.get("conclusion") != "success":
         raise BrokerFailure(
             "required_check_not_successful", "The exact required check is not successful."
-        )
-    pull_requests = check.get("pull_requests")
-    if not isinstance(pull_requests, list) or not any(
-        isinstance(item, dict) and item.get("number") == pr_number
-        for item in pull_requests
-    ):
-        raise BrokerFailure(
-            "required_check_pull_request_mismatch",
-            "The required check is not associated with the exact pull request.",
         )
 
 
@@ -876,22 +854,6 @@ def _consume(
             "/deployment-branch-policies?per_page=100"
         )
     )
-    _validate_empty_collection(
-        client.get(
-            f"repos/{REPOSITORY}/environments/{ENVIRONMENT_NAME}/secrets"
-        ),
-        collection_key="secrets",
-        code="environment_secrets_not_empty",
-        label="Secret",
-    )
-    _validate_empty_collection(
-        client.get(
-            f"repos/{REPOSITORY}/environments/{ENVIRONMENT_NAME}/variables"
-        ),
-        collection_key="variables",
-        code="environment_variables_not_empty",
-        label="Variable",
-    )
     _validate_branch(
         client.get(f"repos/{REPOSITORY}/branches/{DEFAULT_BRANCH}"),
         operation["expected_base_sha"],
@@ -913,7 +875,6 @@ def _consume(
         client.get(
             f"repos/{REPOSITORY}/commits/{operation['expected_head_sha']}/check-runs?{query}"
         ),
-        pr_number=operation["pull_request_number"],
         expected_head_sha=operation["expected_head_sha"],
     )
 

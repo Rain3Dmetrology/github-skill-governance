@@ -2,8 +2,8 @@
 
 - Started: 2026-08-31
 - Issue: [#1](https://github.com/Rain3Dmetrology/github-skill-governance/issues/1)
-- Current state: PR-B0 merged; Environment activated and read back; no C
-  workflow active
+- Current state: PR-B0 and Environment activation merged; PR-B1 canonical
+  workflow candidate is local only and not active on `main`
 
 This record separates architecture, installation, remote activation, effect,
 and post-effect evidence. An unchecked item is not an implied pass.
@@ -49,14 +49,21 @@ The correction diff, runtime hardening, and W-action decision are recorded in
 
 ## PR-B1 — canonical route workflow
 
-- [ ] One canonical `workflow_dispatch` workflow is added after the protected
+- [x] One canonical `workflow_dispatch` workflow is added after the protected
   Environment exists.
-- [ ] The workflow has one Environment-gated consume job, no matrix, no reusable
+- [x] The workflow has one Environment-gated consume job, no matrix, no reusable
   or local action, and no generic API input.
-- [ ] Permissions are exact per job; only the consume job has the single write
+- [x] Permissions are exact per job; only the consume job has the single write
   permission needed for the merge route.
 - [ ] The workflow and validator are merged through a separately authorized C
   action; the Broker is not credited with its own bootstrap merge.
+
+The operator procedure and no-retry recovery path are frozen in
+[`C_AUTHORIZATION_BROKER.md`](./runbooks/C_AUTHORIZATION_BROKER.md). Checked
+PR-B1 items above describe this feature-branch candidate; they do not prove
+remote activation or canary success. Local and point-in-time remote evidence is
+recorded in
+[`P1_C_WORKFLOW_LOCAL_CANDIDATE_2026-09-03.md`](./evidence/P1_C_WORKFLOW_LOCAL_CANDIDATE_2026-09-03.md).
 
 ## Remote negative and replay tests
 
