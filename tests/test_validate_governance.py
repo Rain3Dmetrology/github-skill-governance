@@ -57,6 +57,7 @@ class GovernanceValidatorTests(unittest.TestCase):
             validator.BROKER_SCHEMA_PATH,
             validator.BROKER_CLI_PATH,
             validator.BROKER_ENVIRONMENT_PATH,
+            validator.BROKER_WORKFLOW_PATH,
             ".github/CODEOWNERS",
             validator.MAIN_RULESET_PATH,
             validator.TAG_RULESET_PATH,
@@ -294,15 +295,72 @@ class GovernanceValidatorTests(unittest.TestCase):
         self.assertFalse(result["ok"])
         self.assertIn("broker-cli-contract", self.codes(result))
 
-    def test_broker_workflow_cannot_activate_before_environment(self) -> None:
+    def test_broker_workflow_is_required_and_canonical(self) -> None:
+        self.assertTrue((REPO_ROOT / validator.BROKER_WORKFLOW_PATH).is_file())
         root, tracked = self.copy_repo()
         workflow = root / validator.BROKER_WORKFLOW_PATH
-        workflow.parent.mkdir(parents=True, exist_ok=True)
-        workflow.write_text("name: forbidden-bootstrap\non: workflow_dispatch\n", encoding="utf-8")
-        tracked.append(validator.BROKER_WORKFLOW_PATH)
+        workflow.write_text(
+            workflow.read_text(encoding="utf-8").replace(
+                "permissions: {}",
+                "permissions: write-all",
+                1,
+            ),
+            encoding="utf-8",
+        )
         result = validator.validate_repository(root, tracked)
         self.assertFalse(result["ok"])
-        self.assertTrue({"broker-premature-activation", "workflow-inventory"}.issubset(self.codes(result)))
+        self.assertIn("broker-workflow-canonical", self.codes(result))
+
+    def test_broker_workflow_cannot_be_removed(self) -> None:
+        root, tracked = self.copy_repo()
+        workflow = root / validator.BROKER_WORKFLOW_PATH
+        workflow.unlink()
+        tracked.remove(validator.BROKER_WORKFLOW_PATH)
+        result = validator.validate_repository(root, tracked)
+        self.assertFalse(result["ok"])
+        self.assertTrue(
+            {"broker-workflow-missing", "workflow-inventory"}.issubset(
+                self.codes(result)
+            )
+        )
+
+    def test_broker_workflow_permission_or_route_drift_fails_closed(self) -> None:
+        rewrites = {
+            "ungated-consume": (
+                "    environment:\n      name: c-authorization",
+                "",
+            ),
+            "extra-write": (
+                "      pull-requests: read",
+                "      pull-requests: write",
+            ),
+            "generic-input": (
+                "      expected_head_sha:",
+                "      endpoint:\n        description: Generic endpoint\n        required: true\n        type: string\n      expected_head_sha:",
+            ),
+            "second-operation": (
+                "--expected-head-sha \"$BROKER_EXPECTED_HEAD_SHA\"",
+                "--expected-head-sha \"$BROKER_EXPECTED_HEAD_SHA\" --operation arbitrary",
+            ),
+            "secret-injection": (
+                "          GITHUB_TOKEN: ${{ github.token }}",
+                "          GITHUB_TOKEN: ${{ secrets.ADMIN_TOKEN }}",
+            ),
+            "variable-injection": (
+                "          BROKER_PR_NUMBER: ${{ inputs.pr_number }}",
+                "          BROKER_PR_NUMBER: ${{ vars.PR_NUMBER }}",
+            ),
+        }
+        for name, (old, new) in rewrites.items():
+            with self.subTest(name=name):
+                root, tracked = self.copy_repo()
+                workflow = root / validator.BROKER_WORKFLOW_PATH
+                text = workflow.read_text(encoding="utf-8")
+                self.assertIn(old, text)
+                workflow.write_text(text.replace(old, new, 1), encoding="utf-8")
+                result = validator.validate_repository(root, tracked)
+                self.assertFalse(result["ok"])
+                self.assertIn("broker-workflow-canonical", self.codes(result))
 
     def test_yaml_equivalent_workflow_rewrites_fail_closed(self) -> None:
         rewrites = {

@@ -2,7 +2,7 @@
 
 - Model date: 2026-08-31
 - Scope: exact squash merge of one pull request in this repository
-- Phase: PR-B0, dormant implementation; no active write workflow
+- Phase: PR-B1 canonical workflow candidate; not active on `main`
 
 ## Assets and trust boundaries
 
@@ -52,8 +52,10 @@ Receipts are typed and kept separate:
 | Old approval | Run age and manifest expiry are at most 600 seconds | `ABORTED_PRE_EFFECT` |
 | Environment timer removed or changed | Require exactly one one-minute wait-timer rule in live API readback | `ABORTED_PRE_EFFECT` |
 | Another branch or tag gains Environment access | Require custom policies plus exactly one `main` policy typed as `branch` | `ABORTED_PRE_EFFECT` |
-| Administrator bypass, Secret, or Variable drift | Require explicit bypass=false and empty Environment inventories before effect | `ABORTED_PRE_EFFECT` |
+| Administrator bypass drift | Require explicit bypass=false before effect | `ABORTED_PRE_EFFECT` |
+| Secret or Variable injection | Canonical workflow has no `secrets.*` or `vars.*` expression; inventories are checked externally at activation and closure | validator or closure failure |
 | PR or main changes while waiting | Re-fetch repository, base SHA, PR head/base/state, and check suite after approval; prove the squash commit's sole parent is the authorized base | `ABORTED_PRE_EFFECT` or `RECOVERY_REQUIRED` |
+| Two Broker merges race each other | One repository-wide concurrency group serializes all Broker runs; unrelated external merges remain an explicit residual detected by post-effect parent verification | queued or `RECOVERY_REQUIRED` |
 | Multiple effects behind one approval | One fixed route and at most one mutation request; no matrix or reusable/local action | validator failure |
 | Generic API escalation | No endpoint, method, shell, GraphQL, or free-form JSON input | input rejection |
 | Workflow supply-chain substitution | Canonical workflow, exact workflow SHA, pinned official actions only, standard-library executor | validator failure |

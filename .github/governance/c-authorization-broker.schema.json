@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/Rain3Dmetrology/github-skill-governance/raw/main/.github/governance/c-authorization-broker.schema.json",
   "title": "C Authorization Broker Request Manifest",
-  "description": "Closed contract for the dormant merge-exact-pr route. This schema does not itself grant authority.",
+  "description": "Closed contract for the merge-exact-pr route. This schema does not itself grant authority.",
   "type": "object",
   "additionalProperties": false,
   "required": [

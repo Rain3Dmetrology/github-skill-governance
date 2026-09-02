@@ -55,14 +55,13 @@ class FakeGitHubClient:
         repository_id: int = broker.REPOSITORY_ID,
         branch_sha: str = BASE_SHA,
         pr_head_sha: str = HEAD_SHA,
+        check_head_sha: str = HEAD_SHA,
         check_app_id: int = broker.REQUIRED_CHECK_APP_ID,
         ambiguous_merge: bool = False,
         reconcile_as_merged: bool = False,
         environment_reviewer_id: int = broker.REVIEWER_ID,
         environment_wait_timer: int = broker.WAIT_TIMER_MINUTES,
         environment_can_admins_bypass: bool | None = False,
-        environment_secret_names: tuple[str, ...] = (),
-        environment_variable_names: tuple[str, ...] = (),
         deployment_policy_name: str = broker.DEFAULT_BRANCH,
         deployment_policy_type: str = "branch",
         deployment_policy_count: int = 1,
@@ -72,7 +71,6 @@ class FakeGitHubClient:
         post_merge_branch_sha: str = MERGE_SHA,
         pr_draft: bool = False,
         check_conclusion: str = "success",
-        check_pr_number: int = PR_NUMBER,
     ) -> None:
         self.manifest = manifest
         digest = broker.request_digest(manifest)
@@ -85,14 +83,13 @@ class FakeGitHubClient:
         self.repository_id = repository_id
         self.branch_sha = branch_sha
         self.pr_head_sha = pr_head_sha
+        self.check_head_sha = check_head_sha
         self.check_app_id = check_app_id
         self.ambiguous_merge = ambiguous_merge
         self.reconcile_as_merged = reconcile_as_merged
         self.environment_reviewer_id = environment_reviewer_id
         self.environment_wait_timer = environment_wait_timer
         self.environment_can_admins_bypass = environment_can_admins_bypass
-        self.environment_secret_names = environment_secret_names
-        self.environment_variable_names = environment_variable_names
         self.deployment_policy_name = deployment_policy_name
         self.deployment_policy_type = deployment_policy_type
         self.deployment_policy_count = deployment_policy_count
@@ -102,7 +99,6 @@ class FakeGitHubClient:
         self.post_merge_branch_sha = post_merge_branch_sha
         self.pr_draft = pr_draft
         self.check_conclusion = check_conclusion
-        self.check_pr_number = check_pr_number
         self.merged = False
         self.get_calls: list[str] = []
         self.put_calls: list[tuple[str, dict[str, object]]] = []
@@ -133,7 +129,7 @@ class FakeGitHubClient:
                 "created_at": self.run_created_at,
                 "head_branch": broker.DEFAULT_BRANCH,
                 "head_sha": BASE_SHA,
-                "path": f"{broker.WORKFLOW_PATH}@{broker.DEFAULT_BRANCH}",
+                "path": broker.WORKFLOW_PATH,
                 "repository": {
                     "id": self.repository_id,
                     "full_name": broker.REPOSITORY,
@@ -209,21 +205,6 @@ class FakeGitHubClient:
                 "total_count": self.deployment_policy_count,
                 "branch_policies": policies,
             }
-        if endpoint == (
-            f"repos/{broker.REPOSITORY}/environments/{broker.ENVIRONMENT_NAME}"
-            "/secrets"
-        ):
-            secrets = [{"name": name} for name in self.environment_secret_names]
-            return {"total_count": len(secrets), "secrets": secrets}
-        if endpoint == (
-            f"repos/{broker.REPOSITORY}/environments/{broker.ENVIRONMENT_NAME}"
-            "/variables"
-        ):
-            variables = [
-                {"name": name, "value": "not-sensitive"}
-                for name in self.environment_variable_names
-            ]
-            return {"total_count": len(variables), "variables": variables}
         if endpoint == f"repos/{broker.REPOSITORY}/branches/{broker.DEFAULT_BRANCH}":
             effect_merged = self.merged or (
                 self.ambiguous_merge and self.reconcile_as_merged and bool(self.put_calls)
@@ -260,11 +241,11 @@ class FakeGitHubClient:
                 "check_runs": [
                     {
                         "name": broker.REQUIRED_CHECK_NAME,
-                        "head_sha": HEAD_SHA,
+                        "head_sha": self.check_head_sha,
                         "status": "completed",
                         "conclusion": self.check_conclusion,
                         "app": {"id": self.check_app_id},
-                        "pull_requests": [{"number": self.check_pr_number}],
+                        "pull_requests": [],
                     }
                 ],
             }
@@ -508,26 +489,6 @@ class AuthorizationBrokerTests(unittest.TestCase):
                 )
                 self.assertEqual(client.put_calls, [])
 
-    def test_environment_secrets_or_variables_fail_before_merge(self) -> None:
-        manifest = build_manifest()
-        scenarios = {
-            "secret": FakeGitHubClient(
-                manifest, environment_secret_names=("UNEXPECTED",)
-            ),
-            "variable": FakeGitHubClient(
-                manifest, environment_variable_names=("UNEXPECTED",)
-            ),
-        }
-        for label, client in scenarios.items():
-            with self.subTest(label=label):
-                result = broker.consume(manifest, client, now=NOW)
-                self.assertEqual(result["state"], "ABORTED_PRE_EFFECT")
-                self.assertIn(
-                    f"environment_{label}s_not_empty",
-                    [item["code"] for item in result["errors"]],
-                )
-                self.assertEqual(client.put_calls, [])
-
     def test_deployment_branch_policy_drift_fails_before_merge(self) -> None:
         manifest = build_manifest()
         scenarios = {
@@ -570,12 +531,14 @@ class AuthorizationBrokerTests(unittest.TestCase):
             "repository": FakeGitHubClient(manifest, repository_id=7),
             "base_sha": FakeGitHubClient(manifest, branch_sha="4" * 40),
             "head_sha": FakeGitHubClient(manifest, pr_head_sha="5" * 40),
+            "check_head_sha": FakeGitHubClient(manifest, check_head_sha="6" * 40),
             "check_app": FakeGitHubClient(manifest, check_app_id=999),
         }
         expected_codes = {
             "repository": "repository_id_mismatch",
             "base_sha": "base_sha_mismatch",
             "head_sha": "head_sha_mismatch",
+            "check_head_sha": "required_check_missing",
             "check_app": "required_check_missing",
         }
         for label, client in scenarios.items():
@@ -605,7 +568,6 @@ class AuthorizationBrokerTests(unittest.TestCase):
         scenarios = (
             FakeGitHubClient(manifest, pr_draft=True),
             FakeGitHubClient(manifest, check_conclusion="failure"),
-            FakeGitHubClient(manifest, check_pr_number=PR_NUMBER + 1),
         )
         for client in scenarios:
             with self.subTest(client=client):
