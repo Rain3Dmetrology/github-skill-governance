@@ -51,6 +51,7 @@ Receipts are typed and kept separate:
 | Same-run replay | Digest binds run ID and attempt; attempt must equal 1 | `ABORTED_PRE_EFFECT` |
 | Old approval | Run age and manifest expiry are at most 600 seconds | `ABORTED_PRE_EFFECT` |
 | Environment timer removed or changed | Require exactly one one-minute wait-timer rule in live API readback | `ABORTED_PRE_EFFECT` |
+| Timer history forged, missing, or ambiguous | Require one exact GitHub Actions bot timer record plus one exact maintainer approval for the same Environment ID | `ABORTED_PRE_EFFECT` |
 | Another branch or tag gains Environment access | Require custom policies plus exactly one `main` policy typed as `branch` | `ABORTED_PRE_EFFECT` |
 | Administrator bypass drift | Require explicit bypass=false before effect | `ABORTED_PRE_EFFECT` |
 | Secret or Variable injection | Canonical workflow has no `secrets.*` or `vars.*` expression; inventories are checked externally at activation and closure | validator or closure failure |
