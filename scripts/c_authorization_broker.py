@@ -30,6 +30,8 @@ WORKFLOW_PATH = ".github/workflows/c-merge-exact-pr.yml"
 EXPECTED_WORKFLOW_REF = f"{REPOSITORY}/{WORKFLOW_PATH}@refs/heads/{DEFAULT_BRANCH}"
 REVIEWER_LOGIN = "Rain3Dmetrology"
 REVIEWER_ID = 79391663
+GITHUB_ACTIONS_BOT_LOGIN = "github-actions[bot]"
+GITHUB_ACTIONS_BOT_ID = 41898282
 ENVIRONMENT_NAME = "c-authorization"
 REQUIRED_CHECK_NAME = "governance-baseline"
 REQUIRED_CHECK_APP_ID = 15368
@@ -426,12 +428,66 @@ def _validate_run(
 
 def _validate_approval(payload: object, digest: str) -> int:
     history = _list(payload, code="approval_history_invalid")
-    if len(history) != 1:
+    records = [
+        _mapping(item, code="approval_history_invalid") for item in history
+    ]
+    timer_records: list[Mapping[str, Any]] = []
+    reviewer_records: list[Mapping[str, Any]] = []
+    for record in records:
+        user = _mapping(record.get("user"), code="approval_history_invalid")
+        if (
+            user.get("id") == GITHUB_ACTIONS_BOT_ID
+            and user.get("login") == GITHUB_ACTIONS_BOT_LOGIN
+        ):
+            timer_records.append(record)
+        else:
+            reviewer_records.append(record)
+
+    if len(timer_records) != 1 or len(reviewer_records) != 1:
         raise BrokerFailure(
             "approval_history_ambiguous",
-            "Exactly one Environment approval record is required.",
+            "Exactly one wait-timer record and one reviewer approval are required.",
         )
-    approval = _mapping(history[0], code="approval_history_invalid")
+
+    timer_record = timer_records[0]
+    timer_user = _mapping(
+        timer_record.get("user"), code="wait_timer_history_invalid"
+    )
+    if (
+        timer_record.get("state") != "approved"
+        or timer_record.get("comment") != f"{WAIT_TIMER_MINUTES} minute wait timer"
+        or timer_user.get("type") != "Bot"
+    ):
+        raise BrokerFailure(
+            "wait_timer_history_invalid",
+            "The GitHub wait-timer approval record is invalid.",
+        )
+    timer_environments = _list(
+        timer_record.get("environments"), code="wait_timer_history_invalid"
+    )
+    if len(timer_environments) != 1:
+        raise BrokerFailure(
+            "wait_timer_history_invalid",
+            "The wait-timer record must apply to exactly one Environment.",
+        )
+    timer_environment = _mapping(
+        timer_environments[0], code="wait_timer_history_invalid"
+    )
+    if timer_environment.get("name") != ENVIRONMENT_NAME:
+        raise BrokerFailure(
+            "wait_timer_history_invalid",
+            "The wait-timer Environment does not match.",
+        )
+    timer_environment_id = _required_int(
+        timer_environment, "id", "wait_timer_history_invalid"
+    )
+    if timer_environment_id <= 0:
+        raise BrokerFailure(
+            "wait_timer_history_invalid",
+            "The wait-timer Environment ID is invalid.",
+        )
+
+    approval = reviewer_records[0]
     if approval.get("state") != "approved":
         raise BrokerFailure("approval_missing", "The Environment approval is not approved.")
     if approval.get("comment") != f"APPROVE-C1 {digest}":
@@ -463,9 +519,10 @@ def _validate_approval(payload: object, digest: str) -> int:
     environment_id = _required_int(
         environment, "id", "approval_environment_mismatch"
     )
-    if environment_id <= 0:
+    if environment_id <= 0 or environment_id != timer_environment_id:
         raise BrokerFailure(
-            "approval_environment_mismatch", "The approved Environment ID is invalid."
+            "approval_environment_mismatch",
+            "The reviewer and wait-timer Environment IDs do not match.",
         )
     return environment_id
 

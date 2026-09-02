@@ -119,6 +119,24 @@ class FakeGitHubClient:
             "user": {"id": reviewer_id, "login": reviewer_login},
         }
 
+    @staticmethod
+    def wait_timer_approval_payload(
+        *,
+        bot_id: int = broker.GITHUB_ACTIONS_BOT_ID,
+        bot_login: str = broker.GITHUB_ACTIONS_BOT_LOGIN,
+        comment: str = f"{broker.WAIT_TIMER_MINUTES} minute wait timer",
+        environment: str = broker.ENVIRONMENT_NAME,
+        environment_id: int = 24680,
+        state: str = "approved",
+        user_type: str = "Bot",
+    ) -> dict[str, object]:
+        return {
+            "comment": comment,
+            "environments": [{"id": environment_id, "name": environment}],
+            "state": state,
+            "user": {"id": bot_id, "login": bot_login, "type": user_type},
+        }
+
     def get(self, endpoint: str) -> object:
         self.get_calls.append(endpoint)
         if endpoint.endswith(f"/actions/runs/{RUN_ID}"):
@@ -140,7 +158,10 @@ class FakeGitHubClient:
         if endpoint.endswith(f"/actions/runs/{RUN_ID}/approvals"):
             if self.approval_history is not None:
                 return copy.deepcopy(self.approval_history)
-            return [copy.deepcopy(self.approval)]
+            return [
+                self.wait_timer_approval_payload(),
+                copy.deepcopy(self.approval),
+            ]
         if endpoint == f"repos/{broker.REPOSITORY}":
             return {
                 "id": self.repository_id,
@@ -434,18 +455,51 @@ class AuthorizationBrokerTests(unittest.TestCase):
                 self.assertEqual(result["state"], "ABORTED_PRE_EFFECT")
                 self.assertEqual(client.put_calls, [])
 
-    def test_approval_history_must_be_one_approved_record(self) -> None:
+    def test_approval_history_requires_one_timer_and_one_reviewer_record(self) -> None:
         manifest = build_manifest()
         digest = broker.request_digest(manifest)
+        timer = FakeGitHubClient.wait_timer_approval_payload()
         approved = FakeGitHubClient.approval_payload(
             comment=f"APPROVE-C1 {digest}"
         )
         rejected = FakeGitHubClient.approval_payload(
             comment=f"APPROVE-C1 {digest}", state="rejected"
         )
-        for history in ([], [approved, approved], [rejected]):
+        histories = (
+            [],
+            [approved],
+            [timer],
+            [timer, approved, approved],
+            [timer, timer, approved],
+            [timer, rejected],
+        )
+        for history in histories:
             with self.subTest(history=history):
                 client = FakeGitHubClient(manifest, approval_history=history)
+                result = broker.consume(manifest, client, now=NOW)
+                self.assertEqual(result["state"], "ABORTED_PRE_EFFECT")
+                self.assertEqual(client.put_calls, [])
+
+    def test_wait_timer_history_is_bound_to_github_and_environment(self) -> None:
+        manifest = build_manifest()
+        digest = broker.request_digest(manifest)
+        approved = FakeGitHubClient.approval_payload(
+            comment=f"APPROVE-C1 {digest}"
+        )
+        invalid_timers = (
+            FakeGitHubClient.wait_timer_approval_payload(bot_id=99999),
+            FakeGitHubClient.wait_timer_approval_payload(bot_login="other[bot]"),
+            FakeGitHubClient.wait_timer_approval_payload(comment="timer elapsed"),
+            FakeGitHubClient.wait_timer_approval_payload(state="rejected"),
+            FakeGitHubClient.wait_timer_approval_payload(user_type="User"),
+            FakeGitHubClient.wait_timer_approval_payload(environment="production"),
+            FakeGitHubClient.wait_timer_approval_payload(environment_id=99999),
+        )
+        for timer in invalid_timers:
+            with self.subTest(timer=timer):
+                client = FakeGitHubClient(
+                    manifest, approval_history=[timer, approved]
+                )
                 result = broker.consume(manifest, client, now=NOW)
                 self.assertEqual(result["state"], "ABORTED_PRE_EFFECT")
                 self.assertEqual(client.put_calls, [])
