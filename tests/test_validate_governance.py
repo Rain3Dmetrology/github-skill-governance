@@ -296,7 +296,12 @@ class GovernanceValidatorTests(unittest.TestCase):
         self.assertIn("broker-cli-contract", self.codes(result))
 
     def test_broker_workflow_is_required_and_canonical(self) -> None:
-        self.assertTrue((REPO_ROOT / validator.BROKER_WORKFLOW_PATH).is_file())
+        workflow_path = REPO_ROOT / validator.BROKER_WORKFLOW_PATH
+        self.assertTrue(workflow_path.is_file())
+        workflow_text = workflow_path.read_text(encoding="utf-8")
+        self.assertIn('prepare_exit="$?"', workflow_text)
+        self.assertIn('exit "$prepare_exit"', workflow_text)
+        self.assertIn("## C authorization prepare result", workflow_text)
         root, tracked = self.copy_repo()
         workflow = root / validator.BROKER_WORKFLOW_PATH
         workflow.write_text(

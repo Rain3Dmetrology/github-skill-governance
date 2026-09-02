@@ -48,8 +48,9 @@ jobs:
           BROKER_EXPECTED_BASE_SHA: ${{ inputs.expected_base_sha }}
           BROKER_EXPECTED_HEAD_SHA: ${{ inputs.expected_head_sha }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
           prepared_path="$RUNNER_TEMP/c-authorization-prepare.json"
+          set +e
           python3 scripts/c_authorization_broker.py prepare \
             --run-id "$BROKER_RUN_ID" \
             --run-attempt "$BROKER_RUN_ATTEMPT" \
@@ -59,7 +60,18 @@ jobs:
             --expected-base-sha "$BROKER_EXPECTED_BASE_SHA" \
             --expected-head-sha "$BROKER_EXPECTED_HEAD_SHA" \
             > "$prepared_path"
+          prepare_exit="$?"
+          set -e
           cat "$prepared_path"
+          if [[ "$prepare_exit" -ne 0 ]]; then
+            {
+              printf '## C authorization prepare result\n\n'
+              printf '```json\n'
+              cat "$prepared_path"
+              printf '```\n'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit "$prepare_exit"
+          fi
           approval_comment="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["approval_comment"])' "$prepared_path")"
           request_digest="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["request_digest"])' "$prepared_path")"
           {

@@ -56,6 +56,10 @@ gh workflow run c-merge-exact-pr.yml \
 Do not rerun a failed or cancelled workflow. A rerun is attempt 2 and must be
 rejected. Start a fresh dispatch with freshly read SHAs.
 
+Prepare failures print the Broker's structured JSON to both the job log and
+step summary before returning a nonzero exit. Operators must retain the error
+code and must not infer it from a generic job failure.
+
 ## Approve the exact request
 
 1. Open the workflow run and wait for `prepare-c-authorization` to finish.
