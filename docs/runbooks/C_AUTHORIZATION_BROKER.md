@@ -69,6 +69,11 @@ rejected. Start a fresh dispatch with freshly read SHAs.
 The approval is invalid if the comment is missing, edited, attached to another
 run, issued by another identity, or older than the time limit.
 
+GitHub records the one-minute timer as a separate approval by
+`github-actions[bot]`. The Broker requires exactly that trusted timer record
+and exactly one maintainer approval; extra, missing, malformed, or cross-
+Environment records fail before effect.
+
 ## Interpret the result
 
 | State | Meaning | Operator action |
