@@ -118,7 +118,9 @@
           "additionalProperties": false,
           "required": [
             "name",
-            "app_id"
+            "app_id",
+            "workflow_id",
+            "workflow_path"
           ],
           "properties": {
             "name": {
@@ -126,6 +128,12 @@
             },
             "app_id": {
               "const": 15368
+            },
+            "workflow_id": {
+              "const": 345690067
+            },
+            "workflow_path": {
+              "const": ".github/workflows/governance-baseline.yml"
             }
           }
         }

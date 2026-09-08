@@ -37,7 +37,6 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -59,11 +58,11 @@ jobs:
 
       - name: Run deterministic tests
         shell: bash
-        run: python3 -m unittest discover -s tests -p 'test_*.py'
+        run: python3 -I -m unittest discover -s tests -p 'test_*.py'
 
       - name: Validate governance contracts
         shell: bash
-        run: python3 scripts/validate_governance.py --root .
+        run: python3 -I scripts/validate_governance.py --root .
 """
 EXPECTED_BROKER_WORKFLOW = """name: c-merge-exact-pr
 run-name: "C1 merge PR #${{ inputs.pr_number }}"
@@ -118,7 +117,7 @@ jobs:
           set -uo pipefail
           prepared_path="$RUNNER_TEMP/c-authorization-prepare.json"
           set +e
-          python3 scripts/c_authorization_broker.py prepare \\
+          python3 -I scripts/c_authorization_broker.py prepare \\
             --run-id "$BROKER_RUN_ID" \\
             --run-attempt "$BROKER_RUN_ATTEMPT" \\
             --workflow-ref "$BROKER_WORKFLOW_REF" \\
@@ -139,8 +138,8 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
             exit "$prepare_exit"
           fi
-          approval_comment="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["approval_comment"])' "$prepared_path")"
-          request_digest="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["request_digest"])' "$prepared_path")"
+          approval_comment="$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["approval_comment"])' "$prepared_path")"
+          request_digest="$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["request_digest"])' "$prepared_path")"
           {
             printf '## C authorization request\\n\\n'
             printf 'Approve only this exact comment in the protected Environment gate:\\n\\n'
@@ -182,7 +181,7 @@ jobs:
           set -uo pipefail
           result_path="$RUNNER_TEMP/c-authorization-result.json"
           set +e
-          python3 scripts/c_authorization_broker.py consume \\
+          python3 -I scripts/c_authorization_broker.py consume \\
             --run-id "$BROKER_RUN_ID" \\
             --run-attempt "$BROKER_RUN_ATTEMPT" \\
             --workflow-ref "$BROKER_WORKFLOW_REF" \\
@@ -850,6 +849,8 @@ def validate_broker_bootstrap_contract(
         ("properties", "operation", "properties", "merge_method", "const"): "squash",
         ("properties", "operation", "properties", "required_check", "properties", "name", "const"): "governance-baseline",
         ("properties", "operation", "properties", "required_check", "properties", "app_id", "const"): 15368,
+        ("properties", "operation", "properties", "required_check", "properties", "workflow_id", "const"): 345690067,
+        ("properties", "operation", "properties", "required_check", "properties", "workflow_path", "const"): WORKFLOW_PATH,
         ("properties", "authorization", "properties", "environment", "const"): "c-authorization",
         ("properties", "authorization", "properties", "reviewer", "properties", "login", "const"): "Rain3Dmetrology",
         ("properties", "authorization", "properties", "reviewer", "properties", "id", "const"): 79391663,
@@ -874,7 +875,7 @@ def validate_broker_bootstrap_contract(
 
     expected_environment = {
         "schemaVersion": 1,
-        "status": "environment-active-workflow-candidate",
+        "status": "active-evaluated-single-owner",
         "repository": {
             "id": 1350230486,
             "fullName": "Rain3Dmetrology/github-skill-governance",
@@ -909,7 +910,7 @@ def validate_broker_bootstrap_contract(
 
     expected_cli_contract = {
         "schemaVersion": 1,
-        "status": "canonical-workflow-candidate",
+        "status": "active-evaluated-single-owner",
         "script": "scripts/c_authorization_broker.py",
         "manifestSchema": BROKER_SCHEMA_PATH,
         "approvalCommentFormat": "APPROVE-C1 sha256:<64-lowercase-hex>",
@@ -925,7 +926,10 @@ def validate_broker_bootstrap_contract(
                 "network": "api.github.com",
                 "mutation": "one-conditional-squash-merge",
                 "successStates": ["COMMITTED"],
-                "failureStates": ["ABORTED_PRE_EFFECT", "RECOVERY_REQUIRED"],
+                "failureStates": [
+                    "ABORTED_PRE_EFFECT", "REJECTED_NO_EFFECT",
+                    "RECOVERY_REQUIRED",
+                ],
             },
             "verify": {
                 "network": "api.github.com",
@@ -952,6 +956,9 @@ def validate_broker_bootstrap_contract(
             "run_attempt", "run_id",
         ],
         "failureRequiredFields": ["errors", "ok", "phase", "state"],
+        "recoveryFields": [
+            "reported_merge_sha", "verification_errors", "verification_state",
+        ],
     }
     if cli_contract != expected_cli_contract:
         findings.append(Finding("broker-cli-contract", BROKER_CLI_PATH, "must exactly match the frozen PR-B1 command, state, exit-code, and receipt contract"))

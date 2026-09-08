@@ -10,8 +10,8 @@
 
 > 当前状态：**P1 平台强制已生效**。GitHub 回读与被阻断的负向 PR 已证明
 > required check、main 保护和全标签冻结。受保护的 `c-authorization`
-> Environment 已启用；本 PR-B1 候选加入唯一标准精确 PR Broker 工作流，
-> 在被单独合并到 `main` 前不会生效，发布权仍禁用。
+> Environment 与 Broker 工作流已启用，远端 canary 已证明受测的一次性路由；
+> 但它还不是独占、独立的生产级 C 边界，发布权仍禁用。
 
 <!-- readme-contract:section:why-this-repo -->
 ## 为什么选择这个仓库
@@ -38,9 +38,9 @@ P1 平台控制已生效：`main` 只能通过带严格治理检查的 PR 更新
 P5 前均被冻结。该状态不向任何 Skill 授予常驻变更权或发布权。
 
 <!-- readme-contract:claim:claim.c-authorization-broker-bootstrap -->
-仓库现已包含单路由 C 授权契约、经过本地测试的执行器，以及精确 squash
-merge 的标准工作流候选。受保护 Environment 已启用，但工作流合并和远端
-canary 仍是彼此独立的后续 Gate。
+仓库现已包含生效的单路由 C 授权契约与精确 squash merge 执行器。远端
+canary 已证明受测行为；单一所有者身份与非独占 main 路由仍是生产级 C
+声明的明确阻塞项。
 <!-- /readme-contract:section:why-this-repo -->
 
 <!-- readme-contract:section:quick-start -->
@@ -50,11 +50,11 @@ P1 是已生效的治理强制，不是安装器或发布器：
 
 ```text
 1. 运行：python3 -m unittest discover -s tests -p 'test_*.py'
-2. 运行：python3 scripts/validate_governance.py --root .
+2. 运行：python3 -I scripts/validate_governance.py --root .
 3. 查看：python3 scripts/github_preflight.py --help
 4. 查看：python3 scripts/c_authorization_broker.py --help
 5. 修改已生效控制前审核 docs/P1_C_BROKER_ACCEPTANCE.md
-6. PR-B1 合并后按 docs/runbooks/C_AUTHORIZATION_BROKER.md 操作
+6. 按 docs/runbooks/C_AUTHORIZATION_BROKER.md 操作；恢复态绝不重试
 ```
 
 不要从该 revision 安装 AI 审查器或启用发布自动化。
@@ -68,7 +68,7 @@ P1 是已生效的治理强制，不是安装器或发布器：
 
 | 方案 | 适合选择的条件 | 不该选择的条件 | 当前取舍 | 证据 |
 |---|---|---|---|---|
-| 本治理仓库 | 需要在自动化前冻结许可证、发布权威、双语 README 和权限契约 | 今天就需要已验证的多宿主包或可用发布路径 | P1 控制和受保护 Environment 已生效；标准 Broker 工作流仍是 PR-B1 候选，远端 canary、多宿主分发与发布尚未交付 | [当前策略与验收](./docs/comparisons/P0_ALTERNATIVES.md#this-p0-baseline) |
+| 本治理仓库 | 需要在自动化前冻结许可证、发布权威、双语 README 和权限契约 | 今天就需要已验证的多宿主包或可用发布路径 | P1 控制已生效且 Broker canary 已通过，但独立身份、独占变更路由、多宿主分发与发布仍未交付 | [当前策略与验收](./docs/comparisons/P0_ALTERNATIVES.md#this-p0-baseline) |
 | 人工监督的单体发布提示词 | 可信维护者需要人工监督的检查清单，并接受其仓库许可证 | 需要 OSI 开源核心、确定性 Gate 或已验证多宿主使用 | 配置更少；策略与写命令仍处于同一指令面 | [已审查旧仓快照](./docs/comparisons/P0_ALTERNATIVES.md#legacy-release-prompt) |
 | 每个智能体的非托管副本 | 内容临时且不需要共享期望状态 | 必须跨宿主复现或审计同一 revision | 无中央配置；每个操作者自行跟踪版本并协调收敛 | [对比范围定义](./docs/comparisons/P0_ALTERNATIVES.md#unmanaged-per-agent-copies) |
 
@@ -81,7 +81,7 @@ P1 是已生效的治理强制，不是安装器或发布器：
 
 | 限制 | 对用户的影响 |
 |---|---|
-| C Broker 工作流仍是 PR-B1 候选 | 单独合并前不能调度 Broker 变更；远端 canary 通过前不声称生产可用 |
+| Broker 不是独占 `main` 路由且共用一个所有者身份 | 它是受测的确认机制，不是所有者 Token 失陷防线 |
 | 发布自动化被禁用 | 尚无受支持的 tag 或 GitHub Release 路径 |
 | 没有宿主 adapter 与 smoke test | 当前不声称已验证任何智能体平台 |
 | 只有一名维护者负责审查 | CODEOWNERS 可以路由审查，但不能提供独立批准 |
@@ -92,7 +92,7 @@ P1 是已生效的治理强制，不是安装器或发布器：
 
 | 限制 | 立即措施 | 永久方案 | 状态 |
 |---|---|---|---|
-| Broker 尚未远端验证 | C 动作继续由人类紧邻授权并拒绝可复用回执字符串 | 标准单路由工作流、负向/重放 canary、精确效果回读与 PR-B2 证据 | PR-B1 候选；Issue #1 仍开放 |
+| Broker 身份与路由不独立 | 智能体凭据保持任务级；不得称其为生产级 C 边界 | 专用最小权限 GitHub App、独立审批者、`prevent_self_review=true` 与服务端独占路由 | 远端 canary 已通过；Issue #1 仍开放 |
 | 没有发布路径 | 不创建 tag 或 Release | P5 Draft-first 发布 Saga | 策略禁用 |
 | 没有已验证宿主 | 不声明平台兼容性 | P6 exact-SHA 双宿主 canary | 未开始 |
 | 没有独立审查者 | 如实记录维护者自审，审批数保持为 0 | 强制独立批准前先增加第二名可信人类 | 开放限制 |
@@ -130,11 +130,12 @@ P1 不验证任何运行时或智能体宿主。未来包格式采用开放 Agen
 |---|---|---|
 | P0 | 已授权仓库 bootstrap | 许可证、版本权威、README 契约和 R/W/C 权限冻结 |
 | P1 | P0 验收 | GitHub 平台强制与最小权限检查；已验收 |
-| P1-C | P1 已强制 | 激活并远端验证精确 PR C Broker；Issue #1 |
+| P1-C | P1 已强制 | 单所有者路由已通过 canary；独立身份与独占路由仍阻塞生产封板 |
 | P2a | P1-C 已验证 | 确定性跨仓库双语 README Skill，默认 dry-run、仅 PR |
 | P2b+ | P2a 已有证据 | 发布状态与分发校验器，再进入 Core Skills 与发布 Saga |
 
-P0 与 P1 平台强制已验收。P1-C、P2 及以后仍是决策 Gate，不是交付声明。
+P0 与 P1 平台强制已验收。P1-C 已通过 canary 但未达到生产封板；P2 及以后
+仍是决策 Gate，不是交付声明。
 <!-- /readme-contract:section:roadmap -->
 
 <!-- readme-contract:section:security -->
@@ -143,9 +144,10 @@ P0 与 P1 平台强制已验收。P1-C、P2 及以后仍是决策 Gate，不是�
 禁止提交凭据、客户私密名称、内部路径或生产 Token。参见
 [`SECURITY.md`](./SECURITY.md)。P1 不向任何 Skill 委派常驻的 merge、tag、
 Release、Ruleset、Secret 或生产部署权限。经人类授权的任务执行者只能执行
-ADR-0005 明确限定的 C 类动作。标准 Broker 候选只有在 Environment 批准后
-才获得 job-scoped 写 Token，且只暴露精确 squash-merge 路由；它不会向任何
-Skill 授予常驻 C 权限。
+ADR-0005 明确限定的 C 类动作。已启用 Broker 只有在 Environment 批准后才
+获得 job-scoped 写 Token，且只暴露一次精确 squash-merge 操作；它不会向
+任何 Skill 授予常驻 C 权限。在派发者与审批者共用所有者身份期间，它也不是
+独立控制边界。
 <!-- /readme-contract:section:security -->
 
 <!-- readme-contract:section:license -->

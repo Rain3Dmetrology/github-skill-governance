@@ -1,0 +1,343 @@
+{
+  "version": 1,
+  "audits": [
+    {
+      "date": "2026-08-29",
+      "mode": "full",
+      "dimensions": [
+        "contract",
+        "permissions",
+        "release-integrity",
+        "repository-controls",
+        "credentials",
+        "documentation"
+      ]
+    },
+    {
+      "date": "2026-08-31",
+      "mode": "p1-remote-acceptance",
+      "dimensions": [
+        "contract",
+        "permissions",
+        "release-integrity",
+        "repository-controls",
+        "credentials",
+        "documentation"
+      ]
+    },
+    {
+      "date": "2026-09-08",
+      "mode": "full-adversarial-and-remote-canary",
+      "dimensions": [
+        "contract",
+        "authorization",
+        "effect-integrity",
+        "architecture",
+        "configuration",
+        "distribution"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "authorization--adr-0004--capability-confused-with-delegation",
+      "category": "authorization-boundary",
+      "severity": "high",
+      "file": "docs/adr/0004-rwc-permission-boundaries.md",
+      "line": 24,
+      "summary": "Connector technical capability was stated as if it were identical to delegated Skill authority",
+      "status": "resolved",
+      "verified": true,
+      "first_seen": "2026-08-29",
+      "last_seen": "2026-08-29"
+    },
+    {
+      "id": "policy-schema--repo-policy--class-specific-permission-aliases",
+      "category": "policy-schema",
+      "severity": "high",
+      "file": ".github/governance/repo-policy.yaml",
+      "line": 64,
+      "summary": "R, W, and C used incompatible allow and delegation field names that could fail open",
+      "status": "resolved",
+      "verified": true,
+      "first_seen": "2026-08-29",
+      "last_seen": "2026-08-29"
+    },
+    {
+      "id": "documentation--readme--future-release-capability-in-present-tense",
+      "category": "documentation-accuracy",
+      "severity": "high",
+      "file": "README.md",
+      "line": 8,
+      "summary": "The value proposition described a release path that P0 explicitly did not implement",
+      "status": "resolved",
+      "verified": true,
+      "first_seen": "2026-08-29",
+      "last_seen": "2026-08-29"
+    },
+    {
+      "id": "governance-owner--owners-yaml--semantic-review-owner-absent",
+      "category": "governance-owner",
+      "severity": "medium",
+      "file": ".github/governance/owners.yaml",
+      "line": 4,
+      "summary": "The README contract required a semantic review owner but no owner mapping or self-review limitation existed",
+      "status": "resolved",
+      "verified": true,
+      "first_seen": "2026-08-29",
+      "last_seen": "2026-08-29"
+    },
+    {
+      "id": "audit-scope--p0-acceptance--automation-absence-overclaimed",
+      "category": "audit-scope",
+      "severity": "medium",
+      "file": "docs/P0_ACCEPTANCE.md",
+      "line": 24,
+      "summary": "P0 acceptance claimed global absence of AI review and publishing capability from repository-local evidence",
+      "status": "resolved",
+      "verified": true,
+      "first_seen": "2026-08-29",
+      "last_seen": "2026-08-29"
+    },
+    {
+      "id": "repository-controls--github-settings--main-ruleset-absent",
+      "category": "branch-protection",
+      "severity": "high",
+      "file": "GitHub repository settings",
+      "line": 0,
+      "summary": "The default branch has no active Ruleset and repository policy is not platform-enforced",
+      "status": "resolved",
+      "verified": true,
+      "first_seen": "2026-08-29",
+      "last_seen": "2026-08-31"
+    },
+    {
+      "id": "actions-policy--github-settings--all-actions-and-no-sha-pinning",
+      "category": "actions-policy",
+      "severity": "high",
+      "file": "GitHub repository settings",
+      "line": 0,
+      "summary": "Actions currently allows all actions and does not require full commit SHA pinning",
+      "status": "resolved",
+      "verified": true,
+      "first_seen": "2026-08-29",
+      "last_seen": "2026-08-31"
+    },
+    {
+      "id": "deterministic-gates--workflows--no-enforceable-governance-check",
+      "category": "deterministic-gates",
+      "severity": "high",
+      "file": ".github/workflows",
+      "line": 0,
+      "summary": "No deterministic status check can yet enforce the bilingual, policy, secret, or no-release contracts",
+      "status": "resolved",
+      "verified": true,
+      "first_seen": "2026-08-29",
+      "last_seen": "2026-08-31"
+    },
+    {
+      "id": "release-integrity--legacy-skill--nontransactional-direct-publisher",
+      "category": "release-integrity",
+      "severity": "high",
+      "file": "external:github-release-management/SKILL.md",
+      "line": 152,
+      "summary": "The legacy Skill combines version confirmation, direct pushes, all-tag push, and Release creation without deterministic preflight or rollback",
+      "status": "open",
+      "verified": true,
+      "first_seen": "2026-08-29",
+      "last_seen": "2026-08-31"
+    },
+    {
+      "id": "credential-storage--external-file--plaintext-synchronized-secret-container",
+      "category": "credential-storage",
+      "severity": "high",
+      "file": "[external synchronized credential file]",
+      "line": 0,
+      "summary": "A user-supplied synchronized plaintext file is identified as an API-key container; contents were intentionally not read",
+      "status": "open",
+      "verified": null,
+      "first_seen": "2026-08-29",
+      "last_seen": "2026-08-31"
+    },
+    {
+      "id": "review-independence--owners-yaml--single-maintainer-self-review",
+      "category": "review-independence",
+      "severity": "medium",
+      "file": ".github/governance/owners.yaml",
+      "line": 6,
+      "summary": "A single maintainer cannot satisfy an independent approval requirement without a second trusted reviewer",
+      "status": "open",
+      "verified": true,
+      "first_seen": "2026-08-29",
+      "last_seen": "2026-08-31"
+    },
+    {
+      "id": "installation-visibility--github-account--third-party-app-inventory-incomplete",
+      "category": "audit-visibility",
+      "severity": "medium",
+      "file": "GitHub account installation inventory",
+      "line": 0,
+      "summary": "Repository-level automation absence is verified, but the available OAuth path cannot exhaustively enumerate every account-level GitHub App",
+      "status": "open",
+      "verified": true,
+      "first_seen": "2026-08-29",
+      "last_seen": "2026-08-31"
+    },
+    {
+      "id": "merge-policy--github-settings--multiple-history-modes-and-retained-branches",
+      "category": "merge-policy",
+      "severity": "medium",
+      "file": "GitHub repository settings",
+      "line": 0,
+      "summary": "Merge commit, rebase, and squash are all allowed and merged branches are not deleted automatically",
+      "status": "resolved",
+      "verified": true,
+      "first_seen": "2026-08-29",
+      "last_seen": "2026-08-31"
+    },
+    {
+      "id": "authorization-broker--github-preflight--no-trusted-single-use-c-authorization",
+      "category": "authorization-boundary",
+      "severity": "high",
+      "file": "scripts/github_preflight.py",
+      "line": 200,
+      "summary": "Identity preflight cannot verify trusted issuance, action binding, freshness, or atomic single-use consumption for C authorization",
+      "status": "open",
+      "verified": true,
+      "first_seen": "2026-08-30",
+      "last_seen": "2026-09-08"
+    },
+    {
+      "id": "control-plane--github-rulesets--sole-admin-can-edit-controls",
+      "category": "control-plane",
+      "severity": "medium",
+      "file": "GitHub repository settings",
+      "line": 0,
+      "summary": "The sole repository administrator can still edit or delete the active Rulesets",
+      "status": "open",
+      "verified": true,
+      "first_seen": "2026-08-30",
+      "last_seen": "2026-09-08"
+    },
+    {
+      "id": "authorization-boundary--ruleset--broker-not-exclusive-main-route",
+      "category": "authorization-boundary",
+      "severity": "critical",
+      "file": ".github/governance/rulesets/main.json",
+      "line": 14,
+      "summary": "The active Ruleset permits ordinary checked squash merges and does not make the Broker the exclusive main update route",
+      "status": "open",
+      "verified": true,
+      "first_seen": "2026-09-08",
+      "last_seen": "2026-09-08"
+    },
+    {
+      "id": "authorization-identity--environment--dispatcher-approver-not-independent",
+      "category": "authorization-boundary",
+      "severity": "high",
+      "file": ".github/governance/environments/c-authorization.json",
+      "line": 10,
+      "summary": "The same sole owner identity can dispatch and approve a C run, so approval is not independent",
+      "status": "open",
+      "verified": true,
+      "first_seen": "2026-09-08",
+      "last_seen": "2026-09-08"
+    },
+    {
+      "id": "effect-atomicity--merge-rest--expected-base-not-atomic",
+      "category": "effect-integrity",
+      "severity": "high",
+      "file": "scripts/c_authorization_broker.py",
+      "line": 1074,
+      "summary": "GitHub's pull-request merge REST call binds head SHA but has no atomic expected-base precondition",
+      "status": "open",
+      "verified": true,
+      "first_seen": "2026-09-08",
+      "last_seen": "2026-09-08"
+    },
+    {
+      "id": "check-provenance--broker--same-name-app-id-insufficient",
+      "category": "check-provenance",
+      "severity": "high",
+      "file": "scripts/c_authorization_broker.py",
+      "line": 735,
+      "summary": "Required check validation did not bind the exact workflow source or event",
+      "status": "resolved",
+      "verified": true,
+      "first_seen": "2026-09-08",
+      "last_seen": "2026-09-08"
+    },
+    {
+      "id": "authorization-expiry--broker--clock-not-refreshed-before-put",
+      "category": "authorization-expiry",
+      "severity": "high",
+      "file": "scripts/c_authorization_broker.py",
+      "line": 1068,
+      "summary": "Authorization age was not refreshed immediately before the mutation",
+      "status": "resolved",
+      "verified": true,
+      "first_seen": "2026-09-08",
+      "last_seen": "2026-09-08"
+    },
+    {
+      "id": "effect-reconciliation--broker--eventual-readback-false-recovery",
+      "category": "effect-reconciliation",
+      "severity": "high",
+      "file": "scripts/c_authorization_broker.py",
+      "line": 963,
+      "summary": "Immediate post-merge readback misclassified normal GitHub convergence and discarded specific recovery evidence",
+      "status": "resolved",
+      "verified": true,
+      "first_seen": "2026-09-04",
+      "last_seen": "2026-09-08"
+    },
+    {
+      "id": "runtime-isolation--broker--repository-script-import-shadowing",
+      "category": "workflow-runtime-integrity",
+      "severity": "high",
+      "file": ".github/workflows/c-merge-exact-pr.yml",
+      "line": 54,
+      "summary": "Running repository Python without isolated mode allowed another changed script to shadow standard-library imports",
+      "status": "resolved",
+      "verified": true,
+      "first_seen": "2026-09-08",
+      "last_seen": "2026-09-08"
+    },
+    {
+      "id": "effect-state--broker--post-mutation-failure-misclassification",
+      "category": "effect-reconciliation",
+      "severity": "high",
+      "file": "scripts/c_authorization_broker.py",
+      "line": 1165,
+      "summary": "A typed or unexpected failure after the merge request boundary could be reported as a pre-effect abort",
+      "status": "resolved",
+      "verified": true,
+      "first_seen": "2026-09-08",
+      "last_seen": "2026-09-08"
+    },
+    {
+      "id": "audit-durability--workflow--receipt-not-append-only",
+      "category": "auditability",
+      "severity": "high",
+      "file": ".github/workflows/c-merge-exact-pr.yml",
+      "line": 116,
+      "summary": "Broker receipts are retained in run output and repository evidence but not in an independently controlled append-only journal",
+      "status": "open",
+      "verified": true,
+      "first_seen": "2026-09-08",
+      "last_seen": "2026-09-08"
+    },
+    {
+      "id": "distribution--repository--installable-skill-absent",
+      "category": "distribution",
+      "severity": "high",
+      "file": "README.md",
+      "line": 58,
+      "summary": "No installable Skill package or verified host adapter is currently shipped",
+      "status": "open",
+      "verified": true,
+      "first_seen": "2026-09-08",
+      "last_seen": "2026-09-08"
+    }
+  ]
+}

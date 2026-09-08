@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GitHub Skill Governance audit — 2026-09-08</title>
+  <style>
+    :root { color-scheme: light; --ink:#172033; --muted:#5f6b7a; --line:#d9e0e8; --accent:#165dff; --risk:#a93a2b; --surface:#f6f8fb; }
+    body { margin:0; font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif; color:var(--ink); background:white; }
+    main { max-width:1120px; margin:0 auto; padding:48px 28px 72px; }
+    h1 { font-size:32px; margin:0 0 8px; letter-spacing:-.02em; }
+    h2 { margin-top:36px; font-size:21px; }
+    .lede { color:var(--muted); max-width:860px; }
+    .verdict { border-left:4px solid var(--risk); background:var(--surface); padding:16px 18px; margin:24px 0; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th, td { padding:10px 12px; border:1px solid var(--line); text-align:left; vertical-align:top; }
+    th { background:var(--surface); }
+    code { background:var(--surface); padding:1px 4px; border-radius:3px; }
+    a { color:var(--accent); }
+    ol, ul { padding-left:22px; }
+    .high { color:var(--risk); font-weight:650; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Repository audit</h1>
+  <p class="lede">GitHub Skill Governance · 2026-09-08 · contract, security, architecture, configuration and remote-effect evidence</p>
+  <section class="verdict">
+    <strong>Conclusion:</strong> P1 platform controls and the tested Broker route are real, but the repository is not yet a production C-grade authorization boundary. Normal owner merge authority bypasses the Broker, and dispatch and approval share one identity.
+  </section>
+
+  <h2>Audit basis</h2>
+  <ul>
+    <li>71 tracked files before the audit change; 62 deterministic tests plus the repository validator.</li>
+    <li>Remote GitHub readback and negative/positive Broker canaries.</li>
+    <li>Three parallel audit roles; two independently confirmed the critical/high authorization findings.</li>
+    <li><code>pip-audit</code> and <code>actionlint</code> were unavailable locally; those checks are explicitly degraded, not claimed as passed.</li>
+  </ul>
+
+  <h2>Prioritized findings</h2>
+  <table>
+    <thead><tr><th>ID</th><th>Severity</th><th>Finding</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>AUD-2026-001</td><td class="high">Critical</td><td>Broker is not the exclusive <code>main</code> update route.</td><td>Open; requires a dedicated App/machine actor and server-side exclusive routing.</td></tr>
+      <tr><td>AUD-2026-002</td><td class="high">High</td><td>Dispatcher and Environment approver are the same owner identity.</td><td>Open; separate actor and <code>prevent_self_review=true</code> required.</td></tr>
+      <tr><td>AUD-2026-003</td><td class="high">High</td><td>Merge REST API has no atomic expected-base precondition.</td><td>Open residual; eliminate other writers or use a serialized server-side primitive.</td></tr>
+      <tr><td>AUD-2026-004</td><td class="high">High</td><td>Required-check provenance was too weak.</td><td>Resolved inside Broker: workflow source is bound and control-plane-changing PRs are refused; ordinary owner bypass remains.</td></tr>
+      <tr><td>AUD-2026-005</td><td class="high">High</td><td>TTL was not refreshed immediately before mutation.</td><td>Resolved with a fresh clock check and boundary test.</td></tr>
+      <tr><td>AUD-2026-006</td><td class="high">High</td><td>Eventual consistency caused a false recovery and dropped detail.</td><td>Resolved with bounded read-only retries and typed recovery evidence.</td></tr>
+      <tr><td>AUD-2026-007</td><td class="high">High</td><td>A failure after the mutation boundary could be reported as a pre-effect abort.</td><td>Resolved with explicit attempt state and mandatory read-only reconciliation.</td></tr>
+      <tr><td>AUD-2026-009</td><td class="high">High</td><td>No independently controlled append-only receipt journal.</td><td>Open; do not claim tamper-proof audit durability.</td></tr>
+      <tr><td>AUD-2026-010</td><td class="high">High</td><td>No installable Skill or verified host adapter.</td><td>Assigned to P2; release/tag authority remains frozen.</td></tr>
+      <tr><td>AUD-2026-013</td><td class="high">High</td><td>A changed repository script could shadow the Broker's standard-library imports.</td><td>Resolved with isolated Python and refusal of all <code>.github/</code> and <code>scripts/</code> PR changes.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Verified effect</h2>
+  <p>Run <code>33827147183</code> issued one merge request for PR #13 and did not retry after early readback entered <code>RECOVERY_REQUIRED</code>. Independent readback proved merge <code>a4d922c09ae5537f79fe7f30f1a47eaf09ab2f57</code> with the exact authorized parent <code>d74edaf3d24b0a05b64bdf7e523a8b372462be7b</code>.</p>
+  <p><a href="docs/evidence/P1_C_REMOTE_CANARY_2026-09-04.md">Open full remote canary evidence</a></p>
+
+  <h2>Decision</h2>
+  <ol>
+    <li>Keep Release, tag, Secret and Ruleset authority frozen.</li>
+    <li>Do not present the single-owner Broker as an account-compromise boundary.</li>
+    <li>Proceed with P2 only as deterministic local validation and PR-scoped output.</li>
+    <li>Require a dedicated machine identity and separate approver before production C closure.</li>
+  </ol>
+</main>
+</body>
+</html>

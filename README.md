@@ -11,9 +11,9 @@ Skill receives GitHub write or release authority.
 
 > Status: **P1 platform enforcement active**. GitHub readback and a blocked
 > negative PR prove the required check, main protection, and all-tag freeze.
-> The protected `c-authorization` Environment is active. This PR-B1 candidate
-> adds the only canonical exact-PR Broker workflow; it is not active on `main`
-> until separately merged, and Release authority remains disabled.
+> The protected `c-authorization` Environment and Broker workflow are active;
+> remote canaries proved the tested one-shot route. It is not yet an exclusive,
+> independent production C boundary. Release authority remains disabled.
 
 <!-- readme-contract:section:why-this-repo -->
 ## Why this repository
@@ -46,10 +46,10 @@ through a pull request, and every tag name is frozen until P5. This does not
 grant any Skill standing mutation or release authority.
 
 <!-- readme-contract:claim:claim.c-authorization-broker-bootstrap -->
-The repository contains a one-route C-authorization contract, locally tested
-executor, and canonical exact-squash workflow candidate. The protected
-Environment is active, but workflow merge and remote canaries remain separate
-later gates.
+The repository contains an active one-route C-authorization contract and
+exact-squash executor. Remote canaries prove its tested behavior, while the
+single-owner identity and non-exclusive main route remain explicit blockers to
+a production C-grade claim.
 <!-- /readme-contract:section:why-this-repo -->
 
 <!-- readme-contract:section:quick-start -->
@@ -59,11 +59,11 @@ P1 is enforced governance, not an installer or publisher:
 
 ```text
 1. Run: python3 -m unittest discover -s tests -p 'test_*.py'
-2. Run: python3 scripts/validate_governance.py --root .
+2. Run: python3 -I scripts/validate_governance.py --root .
 3. Inspect: python3 scripts/github_preflight.py --help
 4. Inspect: python3 scripts/c_authorization_broker.py --help
 5. Review docs/P1_C_BROKER_ACCEPTANCE.md before changing enforced controls
-6. After PR-B1 is merged, follow docs/runbooks/C_AUTHORIZATION_BROKER.md
+6. Follow docs/runbooks/C_AUTHORIZATION_BROKER.md; never retry a recovery state
 ```
 
 Do not install an AI reviewer or enable release automation from this revision.
@@ -78,7 +78,7 @@ not a performance benchmark.
 
 | Approach | Choose it when | Do not choose it when | Current trade-off | Evidence |
 |---|---|---|---|---|
-| This governance repository | You need license, release-authority, bilingual README, and permission contracts before automation | You need an already verified multi-host package or working release path today | P1 controls and the protected Environment are active; the canonical Broker workflow is a PR-B1 candidate, while remote canaries, multi-host distribution, and release remain unshipped | [Current policy and acceptance](./docs/comparisons/P0_ALTERNATIVES.md#this-p0-baseline) |
+| This governance repository | You need license, release-authority, bilingual README, and permission contracts before automation | You need an already verified multi-host package or working release path today | P1 controls are active and Broker canaries passed, but independent identity, exclusive mutation routing, multi-host distribution, and release remain unshipped | [Current policy and acceptance](./docs/comparisons/P0_ALTERNATIVES.md#this-p0-baseline) |
 | One human-supervised release prompt | A trusted maintainer needs a manually supervised checklist and accepts its repository license | You need an OSI-open reusable core, deterministic gates, or verified multi-host use | Lower setup; policy and write commands remain in the same instruction surface | [Reviewed legacy snapshot](./docs/comparisons/P0_ALTERNATIVES.md#legacy-release-prompt) |
 | Unmanaged per-agent copies | The content is temporary and no shared desired state is required | The same revision must be reproduced or audited across hosts | No central setup; each operator owns revision tracking and reconciliation | [Defined comparison scope](./docs/comparisons/P0_ALTERNATIVES.md#unmanaged-per-agent-copies) |
 
@@ -91,7 +91,7 @@ failure-scenario reference, not a dependency or production release executor.
 
 | Limitation | User impact |
 |---|---|
-| C Broker workflow is a PR-B1 candidate | No Broker mutation can be dispatched until the workflow is separately merged; no production claim is made before remote canaries pass |
+| Broker is not the exclusive `main` route and uses one owner identity | It is a tested confirmation mechanism, not protection against owner-token compromise |
 | Release automation is disabled | There is no supported tag or GitHub Release path yet |
 | Host adapters and smoke tests are absent | No agent platform is currently claimed as verified |
 | One maintainer owns review | CODEOWNERS routes review but cannot provide independent approval |
@@ -102,7 +102,7 @@ failure-scenario reference, not a dependency or production release executor.
 
 | Limitation | Immediate mitigation | Permanent path | Status |
 |---|---|---|---|
-| Broker not remotely verified | Keep C actions manually and adjacently authorized; reject reusable receipt strings | Canonical one-route workflow, negative/replay canaries, exact effect readback, and PR-B2 evidence | PR-B1 candidate; Issue #1 remains open |
+| Broker identity and route are not independent | Keep agent credentials task-scoped; do not call this a production C boundary | Dedicated least-privilege GitHub App, separate approver, `prevent_self_review=true`, and server-side exclusive routing | Remote canaries passed; Issue #1 remains open |
 | No release path | Do not create tags or Releases | P5 Draft-first release Saga | Disabled by policy |
 | No verified hosts | Do not claim platform compatibility | P6 exact-SHA two-host canary | Not started |
 | No independent reviewer | Record maintainer self-review honestly; require zero approvals | Add a second trusted human before enforcing independent approval | Open limitation |
@@ -142,12 +142,13 @@ Machine-readable claim mapping lives in [`docs/claims.yaml`](./docs/claims.yaml)
 |---|---|---|
 | P0 | Repository bootstrap authorized | License, version authority, README contract, and R/W/C boundaries frozen |
 | P1 | P0 accepted | GitHub platform enforcement and least-privilege checks; accepted |
-| P1-C | P1 enforced | Activate and remotely verify the exact-PR C Broker; Issue #1 |
+| P1-C | P1 enforced | Canary-verified single-owner route; independent identity and exclusive routing still block production closure |
 | P2a | P1-C verified | Deterministic cross-repository bilingual README Skill, dry-run and PR-only |
 | P2b+ | P2a evidence exists | Release-state and distribution validators, then Core Skills and release Saga |
 
-P0 and P1 platform enforcement are accepted. P1-C, P2, and later phases remain
-decision gates, not delivery claims.
+P0 and P1 platform enforcement are accepted. P1-C is canary-verified but not
+production-closed; P2 and later phases remain decision gates, not delivery
+claims.
 <!-- /readme-contract:section:roadmap -->
 
 <!-- readme-contract:section:security -->
@@ -157,9 +158,10 @@ Do not submit credentials, private client names, internal paths, or production
 tokens. See [`SECURITY.md`](./SECURITY.md). P1 delegates no standing merge,
 tag, release, Ruleset, Secret, or deployment authority to any Skill. A human-
 authorized task actor may execute only the explicitly scoped C actions defined
-by ADR-0005. The canonical Broker candidate receives a job-scoped write token
-only after Environment approval and exposes only the exact squash-merge route;
-it does not give any Skill standing C authority.
+by ADR-0005. The active Broker receives a job-scoped write token only after
+Environment approval and exposes one exact squash-merge operation. It does not
+give any Skill standing C authority, and it is not an independent control while
+the dispatcher and approver share the owner identity.
 <!-- /readme-contract:section:security -->
 
 <!-- readme-contract:section:license -->

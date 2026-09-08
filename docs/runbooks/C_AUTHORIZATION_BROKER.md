@@ -14,8 +14,13 @@ canaries. It is not a generic repository administration interface.
 - The consume job cannot start until the `c-authorization` Environment is
   approved. Only that job receives `contents: write`.
 - Attempt 1 only; request age at consumption must not exceed 600 seconds.
-- The Broker performs at most one conditional squash-merge request and verifies
-  the resulting commit and parent. An ambiguous effect is never retried.
+- The Broker performs at most one conditional squash-merge request. Bounded
+  retries apply only to read-only eventual-consistency verification; an
+  ambiguous mutation is never retried.
+- The Broker rejects PRs touching any path under `.github/` or `scripts/`,
+  including renames from those paths. The isolated Python invocation also
+  removes the script directory from the import search path. Control-plane
+  changes require a separately authorized bootstrap path.
 - The workflow contains no `secrets.*` or `vars.*` reference. No repository or
   Environment Secret is required.
 
@@ -84,6 +89,7 @@ Environment records fail before effect.
 |---|---|---|
 | `COMMITTED` | Exact effect and post-merge topology were verified | Perform independent readback and retain the run URL |
 | `ABORTED_PRE_EFFECT` | No committed effect was reported | Fix the stated invariant, then create a new dispatch; never rerun |
+| `REJECTED_NO_EFFECT` | One mutation request was attempted, GitHub rejected it, and readback proved no effect | Treat the approval as consumed; diagnose, then create a fresh dispatch; never rerun |
 | `RECOVERY_REQUIRED` | A mutation may have occurred but exact effect is not proven | Stop all retries and reconcile the PR, `main`, and merge commit read-only |
 
 For `RECOVERY_REQUIRED`, preserve the run logs and inspect these endpoints
@@ -99,8 +105,9 @@ gh api repos/Rain3Dmetrology/github-skill-governance/commits/EXPECTED_MERGE_SHA
 
 Record the run ID, run attempt, approval digest, PR number, authorized base and
 head SHAs, merge commit SHA, and the merge commit's sole parent. Re-read tag,
-Release, repository Secret, and Environment Secret counts. Do not mark P1-C
-complete until PR-B2 commits those receipts and Issue #1 is closed.
+Release, repository Secret, and Environment Secret counts. Remote canary
+completion does not close Issue #1 while the independent-identity and
+exclusive-route production blockers remain open.
 
 ## Permission caveat
 

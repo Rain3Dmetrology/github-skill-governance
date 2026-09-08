@@ -26,6 +26,9 @@ HEAD_SHA = "2" * 40
 MERGE_SHA = "3" * 40
 RUN_ID = 987654321
 PR_NUMBER = 42
+HEAD_REF = "feature"
+CHECK_RUN_ID = 444444444
+CHECK_WORKFLOW_RUN_ID = 555555555
 NOW = datetime(2026, 8, 31, 0, 5, tzinfo=timezone.utc)
 
 
@@ -57,8 +60,18 @@ class FakeGitHubClient:
         pr_head_sha: str = HEAD_SHA,
         check_head_sha: str = HEAD_SHA,
         check_app_id: int = broker.REQUIRED_CHECK_APP_ID,
+        check_event: str = "pull_request",
+        check_workflow_id: int = broker.REQUIRED_CHECK_WORKFLOW_ID,
+        check_workflow_path: str = broker.REQUIRED_CHECK_WORKFLOW_PATH,
+        check_workflow_name: str = broker.REQUIRED_CHECK_NAME,
+        check_details_url: str | None = None,
+        changed_files: list[dict[str, object]] | None = None,
         ambiguous_merge: bool = False,
+        explicit_merge_rejection: bool = False,
+        typed_merge_rejection: bool = False,
+        raise_after_merge: bool = False,
         reconcile_as_merged: bool = False,
+        verification_lag_reads: int = 0,
         environment_reviewer_id: int = broker.REVIEWER_ID,
         environment_wait_timer: int = broker.WAIT_TIMER_MINUTES,
         environment_can_admins_bypass: bool | None = False,
@@ -85,8 +98,22 @@ class FakeGitHubClient:
         self.pr_head_sha = pr_head_sha
         self.check_head_sha = check_head_sha
         self.check_app_id = check_app_id
+        self.check_event = check_event
+        self.check_workflow_id = check_workflow_id
+        self.check_workflow_path = check_workflow_path
+        self.check_workflow_name = check_workflow_name
+        self.check_details_url = check_details_url or (
+            f"https://github.com/{broker.REPOSITORY}/actions/runs/"
+            f"{CHECK_WORKFLOW_RUN_ID}/job/{CHECK_RUN_ID}"
+        )
+        self.changed_files = changed_files or [{"filename": "docs/example.md"}]
         self.ambiguous_merge = ambiguous_merge
+        self.explicit_merge_rejection = explicit_merge_rejection
+        self.typed_merge_rejection = typed_merge_rejection
+        self.raise_after_merge = raise_after_merge
         self.reconcile_as_merged = reconcile_as_merged
+        self.verification_lag_reads = verification_lag_reads
+        self.post_put_pr_reads = 0
         self.environment_reviewer_id = environment_reviewer_id
         self.environment_wait_timer = environment_wait_timer
         self.environment_can_admins_bypass = environment_can_admins_bypass
@@ -233,9 +260,14 @@ class FakeGitHubClient:
             current = self.post_merge_branch_sha if effect_merged else self.branch_sha
             return {"name": broker.DEFAULT_BRANCH, "commit": {"sha": current}}
         if endpoint == f"repos/{broker.REPOSITORY}/pulls/{PR_NUMBER}":
-            is_merged = self.merged or (
+            effect_should_be_merged = self.merged or (
                 self.ambiguous_merge and self.reconcile_as_merged and bool(self.put_calls)
             )
+            if effect_should_be_merged and self.put_calls:
+                self.post_put_pr_reads += 1
+                is_merged = self.post_put_pr_reads > self.verification_lag_reads
+            else:
+                is_merged = effect_should_be_merged
             return {
                 "number": PR_NUMBER,
                 "state": "closed" if is_merged else "open",
@@ -244,16 +276,22 @@ class FakeGitHubClient:
                 "merged": is_merged,
                 "merged_at": "2026-08-31T00:05:10Z" if is_merged else None,
                 "merge_commit_sha": MERGE_SHA if is_merged else None,
+                "changed_files": len(self.changed_files),
                 "base": {
                     "ref": broker.DEFAULT_BRANCH,
                     "sha": BASE_SHA,
                     "repo": {"id": self.repository_id, "full_name": broker.REPOSITORY},
                 },
                 "head": {
+                    "ref": HEAD_REF,
                     "sha": self.pr_head_sha,
                     "repo": {"id": self.repository_id, "full_name": broker.REPOSITORY},
                 },
             }
+        if endpoint == (
+            f"repos/{broker.REPOSITORY}/pulls/{PR_NUMBER}/files?per_page=100"
+        ):
+            return copy.deepcopy(self.changed_files)
         if endpoint.startswith(
             f"repos/{broker.REPOSITORY}/commits/{HEAD_SHA}/check-runs?"
         ):
@@ -261,14 +299,42 @@ class FakeGitHubClient:
                 "total_count": 1,
                 "check_runs": [
                     {
+                        "id": CHECK_RUN_ID,
                         "name": broker.REQUIRED_CHECK_NAME,
                         "head_sha": self.check_head_sha,
                         "status": "completed",
                         "conclusion": self.check_conclusion,
+                        "details_url": self.check_details_url,
                         "app": {"id": self.check_app_id},
                         "pull_requests": [],
                     }
                 ],
+            }
+        if endpoint == f"repos/{broker.REPOSITORY}/actions/jobs/{CHECK_RUN_ID}":
+            return {
+                "id": CHECK_RUN_ID,
+                "name": broker.REQUIRED_CHECK_NAME,
+                "head_sha": self.check_head_sha,
+                "status": "completed",
+                "conclusion": self.check_conclusion,
+                "workflow_name": self.check_workflow_name,
+                "run_url": (
+                    f"{broker.API_ROOT}/repos/{broker.REPOSITORY}/actions/runs/"
+                    f"{CHECK_WORKFLOW_RUN_ID}"
+                ),
+            }
+        if endpoint == (
+            f"repos/{broker.REPOSITORY}/actions/runs/{CHECK_WORKFLOW_RUN_ID}"
+        ):
+            return {
+                "id": CHECK_WORKFLOW_RUN_ID,
+                "event": self.check_event,
+                "workflow_id": self.check_workflow_id,
+                "path": self.check_workflow_path,
+                "head_branch": HEAD_REF,
+                "head_sha": self.check_head_sha,
+                "status": "completed",
+                "conclusion": self.check_conclusion,
             }
         if endpoint == f"repos/{broker.REPOSITORY}/commits/{MERGE_SHA}":
             return {
@@ -281,7 +347,20 @@ class FakeGitHubClient:
         self.put_calls.append((endpoint, copy.deepcopy(body)))
         if self.ambiguous_merge:
             raise broker.ApiAmbiguousFailure()
+        if self.typed_merge_rejection:
+            raise broker.BrokerFailure(
+                "github_api_rejected",
+                "GitHub rejected the merge request.",
+            )
+        if self.explicit_merge_rejection:
+            return {
+                "sha": None,
+                "merged": False,
+                "message": "Base branch was modified",
+            }
         self.merged = True
+        if self.raise_after_merge:
+            raise RuntimeError("injected post-effect transport failure")
         return {
             "sha": self.merge_response_sha,
             "merged": True,
@@ -290,6 +369,11 @@ class FakeGitHubClient:
 
 
 class AuthorizationBrokerTests(unittest.TestCase):
+    def setUp(self) -> None:
+        sleep_patch = mock.patch.object(broker.time, "sleep", return_value=None)
+        sleep_patch.start()
+        self.addCleanup(sleep_patch.stop)
+
     def test_machine_manifest_schema_matches_runtime_contract(self) -> None:
         schema = json.loads(
             (ROOT / ".github/governance/c-authorization-broker.schema.json").read_text(
@@ -353,6 +437,14 @@ class AuthorizationBrokerTests(unittest.TestCase):
         self.assertEqual(set(contract["prepareSuccessFields"]), set(prepared))
         self.assertEqual(set(contract["effectSuccessFields"]), set(consumed))
         self.assertEqual(set(contract["receiptFields"]), set(consumed["receipt"]))
+        recovery_result = broker.consume(
+            manifest,
+            FakeGitHubClient(manifest, ambiguous_merge=True),
+            now=NOW,
+        )
+        self.assertEqual(
+            set(contract["recoveryFields"]), set(recovery_result["recovery"])
+        )
         self.assertEqual(set(contract["exitCodes"]), {"0", "1", "2"})
         self.assertEqual(broker._exit_for(prepared), broker.EXIT_OK)
         self.assertEqual(broker._exit_for(recovery), broker.EXIT_RECOVERY_REQUIRED)
@@ -383,6 +475,14 @@ class AuthorizationBrokerTests(unittest.TestCase):
         self.assertEqual(
             manifest["operation"]["required_check"]["app_id"],
             broker.REQUIRED_CHECK_APP_ID,
+        )
+        self.assertEqual(
+            manifest["operation"]["required_check"]["workflow_id"],
+            broker.REQUIRED_CHECK_WORKFLOW_ID,
+        )
+        self.assertEqual(
+            manifest["operation"]["required_check"]["workflow_path"],
+            broker.REQUIRED_CHECK_WORKFLOW_PATH,
         )
         self.assertEqual(manifest["authorization"]["reviewer"]["id"], broker.REVIEWER_ID)
 
@@ -426,6 +526,27 @@ class AuthorizationBrokerTests(unittest.TestCase):
                 for value in client.get_calls[approval_index + 1 :]
             )
         )
+
+    def test_eventual_consistency_readback_retries_reads_not_mutation(self) -> None:
+        manifest = build_manifest()
+        client = FakeGitHubClient(manifest, verification_lag_reads=2)
+        sleeps: list[float] = []
+
+        result = broker.consume(manifest, client, now=NOW, sleep=sleeps.append)
+
+        self.assertEqual(result["state"], "COMMITTED")
+        self.assertEqual(len(client.put_calls), 1)
+        self.assertEqual(sleeps, [broker.VERIFY_RETRY_SECONDS] * 2)
+
+    def test_transport_failure_after_merge_reconciles_without_retry(self) -> None:
+        manifest = build_manifest()
+        client = FakeGitHubClient(manifest, raise_after_merge=True)
+
+        result = broker.consume(manifest, client, now=NOW)
+
+        self.assertEqual(result["state"], "COMMITTED")
+        self.assertTrue(result["receipt"]["reconciled"])
+        self.assertEqual(len(client.put_calls), 1)
 
     def test_wrong_reviewer_comment_or_environment_fails_before_merge(self) -> None:
         manifest = build_manifest()
@@ -579,6 +700,23 @@ class AuthorizationBrokerTests(unittest.TestCase):
             build_manifest(run_attempt=2)
         self.assertEqual(raised.exception.code, "run_attempt_rejected")
 
+    def test_run_age_is_refreshed_immediately_before_mutation(self) -> None:
+        manifest = build_manifest()
+        client = FakeGitHubClient(manifest)
+        moments = iter(
+            (
+                NOW,
+                NOW,
+                datetime(2026, 8, 31, 0, 10, 1, tzinfo=timezone.utc),
+            )
+        )
+
+        result = broker.consume(manifest, client, clock=lambda: next(moments))
+
+        self.assertEqual(result["state"], "ABORTED_PRE_EFFECT")
+        self.assertIn("run_expired", [item["code"] for item in result["errors"]])
+        self.assertEqual(client.put_calls, [])
+
     def test_repository_sha_and_required_check_app_mismatches_fail_closed(self) -> None:
         manifest = build_manifest()
         scenarios = {
@@ -603,6 +741,72 @@ class AuthorizationBrokerTests(unittest.TestCase):
                     expected_codes[label], [item["code"] for item in result["errors"]]
                 )
                 self.assertEqual(client.put_calls, [])
+
+    def test_required_check_must_come_from_canonical_pull_request_workflow(self) -> None:
+        manifest = build_manifest()
+        scenarios = {
+            "manual_event": FakeGitHubClient(manifest, check_event="workflow_dispatch"),
+            "other_workflow_id": FakeGitHubClient(
+                manifest, check_workflow_id=broker.REQUIRED_CHECK_WORKFLOW_ID + 1
+            ),
+            "other_workflow_path": FakeGitHubClient(
+                manifest, check_workflow_path=".github/workflows/other.yml"
+            ),
+            "other_workflow_name": FakeGitHubClient(
+                manifest, check_workflow_name="other"
+            ),
+            "untrusted_details_url": FakeGitHubClient(
+                manifest, check_details_url="https://example.test/actions/runs/1/job/2"
+            ),
+        }
+        for label, client in scenarios.items():
+            with self.subTest(label=label):
+                result = broker.consume(manifest, client, now=NOW)
+                self.assertEqual(result["state"], "ABORTED_PRE_EFFECT")
+                self.assertIn(
+                    "required_check_source_mismatch",
+                    [item["code"] for item in result["errors"]],
+                )
+                self.assertEqual(client.put_calls, [])
+
+    def test_broker_rejects_protected_control_plane_changes(self) -> None:
+        manifest = build_manifest()
+        scenarios = {
+            "workflow": [{"filename": ".github/workflows/governance-baseline.yml"}],
+            "broker": [{"filename": "scripts/c_authorization_broker.py"}],
+            "validator": [{"filename": "scripts/validate_governance.py"}],
+            "import_shadow": [{"filename": "scripts/json.py"}],
+            "rename_from_control_plane": [
+                {
+                    "filename": "docs/renamed.txt",
+                    "previous_filename": ".github/governance/repo-policy.yaml",
+                }
+            ],
+        }
+        for label, files in scenarios.items():
+            with self.subTest(label=label):
+                client = FakeGitHubClient(manifest, changed_files=files)
+                result = broker.consume(manifest, client, now=NOW)
+                self.assertEqual(result["state"], "ABORTED_PRE_EFFECT")
+                self.assertIn(
+                    "protected_control_plane_change",
+                    [item["code"] for item in result["errors"]],
+                )
+                self.assertEqual(client.put_calls, [])
+
+    def test_broker_rejects_pull_requests_beyond_closed_file_limit(self) -> None:
+        manifest = build_manifest()
+        files = [{"filename": f"docs/file-{index}.md"} for index in range(101)]
+        client = FakeGitHubClient(manifest, changed_files=files)
+
+        result = broker.consume(manifest, client, now=NOW)
+
+        self.assertEqual(result["state"], "ABORTED_PRE_EFFECT")
+        self.assertIn(
+            "pull_request_file_count_rejected",
+            [item["code"] for item in result["errors"]],
+        )
+        self.assertEqual(client.put_calls, [])
 
     def test_pull_request_mergeability_null_or_false_fails_closed(self) -> None:
         manifest = build_manifest()
@@ -652,6 +856,33 @@ class AuthorizationBrokerTests(unittest.TestCase):
         self.assertEqual(result["state"], "RECOVERY_REQUIRED")
         self.assertEqual(len(client.put_calls), 1)
         self.assertIn("effect_ambiguous", [item["code"] for item in result["errors"]])
+        self.assertEqual(
+            result["recovery"]["verification_state"], "VERIFIED_NOT_COMMITTED"
+        )
+        self.assertIn(
+            "effect_not_committed",
+            [item["code"] for item in result["recovery"]["verification_errors"]],
+        )
+
+    def test_explicit_merge_rejection_has_distinct_proven_no_effect_state(self) -> None:
+        manifest = build_manifest()
+        client = FakeGitHubClient(manifest, explicit_merge_rejection=True)
+
+        result = broker.consume(manifest, client, now=NOW)
+
+        self.assertEqual(result["state"], "REJECTED_NO_EFFECT")
+        self.assertIn("github_merge_rejected", [item["code"] for item in result["errors"]])
+        self.assertEqual(len(client.put_calls), 1)
+
+    def test_typed_put_rejection_is_reconciled_after_mutation_boundary(self) -> None:
+        manifest = build_manifest()
+        client = FakeGitHubClient(manifest, typed_merge_rejection=True)
+
+        result = broker.consume(manifest, client, now=NOW)
+
+        self.assertEqual(result["state"], "REJECTED_NO_EFFECT")
+        self.assertIn("github_api_rejected", [item["code"] for item in result["errors"]])
+        self.assertEqual(len(client.put_calls), 1)
 
     def test_success_response_sha_must_match_verified_merge_sha(self) -> None:
         manifest = build_manifest()
@@ -663,6 +894,10 @@ class AuthorizationBrokerTests(unittest.TestCase):
         self.assertEqual(len(client.put_calls), 1)
         self.assertIn(
             "merge_response_mismatch", [item["code"] for item in result["errors"]]
+        )
+        self.assertEqual(result["recovery"]["reported_merge_sha"], "4" * 40)
+        self.assertEqual(
+            result["recovery"]["verification_state"], "VERIFIED_COMMITTED"
         )
 
     def test_verify_rejects_main_tip_that_is_not_exact_merge_commit(self) -> None:
