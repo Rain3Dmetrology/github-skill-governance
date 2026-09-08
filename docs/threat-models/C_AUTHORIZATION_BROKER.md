@@ -2,7 +2,7 @@
 
 - Model date: 2026-08-31
 - Scope: exact squash merge of one pull request in this repository
-- Phase: PR-B1 canonical workflow candidate; not active on `main`
+- Phase: active and remote-canary tested; not an exclusive production C route
 
 ## Assets and trust boundaries
 
@@ -59,13 +59,13 @@ Receipts are typed and kept separate:
 | Two Broker merges race each other | One repository-wide concurrency group serializes all Broker runs; unrelated external merges remain an explicit residual detected by post-effect parent verification | queued or `RECOVERY_REQUIRED` |
 | Multiple effects behind one approval | One fixed route and at most one mutation request; no matrix or reusable/local action | validator failure |
 | Generic API escalation | No endpoint, method, shell, GraphQL, or free-form JSON input | input rejection |
-| Workflow supply-chain substitution | Canonical workflow, exact workflow SHA, pinned official actions only, standard-library executor | validator failure |
-| Check spoofing | Match required check name, success state, exact head SHA, and App ID `15368` | `ABORTED_PRE_EFFECT` |
+| Workflow supply-chain substitution or local import shadowing | Canonical workflow, exact workflow SHA, pinned official actions, isolated standard-library executor invocation, and refusal to merge changes under `.github/` or `scripts/` | validator or `ABORTED_PRE_EFFECT` |
+| Check spoofing | Match required check name, success state, exact head SHA, App ID `15368`, job/run identity, canonical workflow ID/path, and `pull_request` event; refuse PR changes under `.github/` or `scripts/` | `ABORTED_PRE_EFFECT` |
 | Secret or token disclosure | No Secret; never print token or authorization header; receipts contain no local absolute path | test/validator failure |
 | Ambiguous mutation response | One mutation attempt, then read-only reconciliation; no automatic retry | `RECOVERY_REQUIRED` |
 | Environment drift | Exact API readback plus manual administrator-bypass assertion before workflow activation | activation blocked |
 | Missing Environment auto-created unprotected | Broker workflow remains absent until protected Environment exists | activation blocked |
-| Owner account compromise | Short TTL, exact digest, server audit, narrow route, no standing release capability | accepted residual |
+| Owner account compromise | Same identity can dispatch, approve, and ordinarily merge; short TTL and exact digest do not create identity separation | production blocked |
 
 ## Non-goals
 

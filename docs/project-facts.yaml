@@ -19,6 +19,6 @@ current_capabilities:
   deterministic_ci_gates: implemented
   readonly_identity_preflight: implemented-authorization-not-verified
   github_platform_enforcement: enforced
-  c_authorization_broker: canonical-workflow-candidate-not-active
+  c_authorization_broker: active-canary-verified-single-owner-not-production-c
   release_automation: disabled
   host_distribution: not-implemented

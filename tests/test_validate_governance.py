@@ -378,7 +378,7 @@ class GovernanceValidatorTests(unittest.TestCase):
                 '        "uses": actions/setup-python@v5',
             ),
             "quoted-release-trigger": (
-                "  workflow_dispatch:",
+                "  pull_request:",
                 '  "release":',
             ),
         }

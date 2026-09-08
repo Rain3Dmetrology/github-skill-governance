@@ -14,8 +14,9 @@ import json
 import os
 import re
 import sys
+import time
 from datetime import datetime, timezone
-from typing import Any, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence
 from urllib import error, parse, request
 
 
@@ -35,8 +36,14 @@ GITHUB_ACTIONS_BOT_ID = 41898282
 ENVIRONMENT_NAME = "c-authorization"
 REQUIRED_CHECK_NAME = "governance-baseline"
 REQUIRED_CHECK_APP_ID = 15368
+REQUIRED_CHECK_WORKFLOW_ID = 345690067
+REQUIRED_CHECK_WORKFLOW_PATH = ".github/workflows/governance-baseline.yml"
 MAX_RUN_AGE_SECONDS = 600
 WAIT_TIMER_MINUTES = 1
+VERIFY_ATTEMPTS = 6
+VERIFY_RETRY_SECONDS = 2
+MAX_PULL_REQUEST_FILES = 100
+PROTECTED_CONTROL_PLANE_PREFIXES = (".github/", "scripts/")
 SCHEMA_VERSION = "c-authorization/v1"
 OPERATION_TYPE = "merge-exact-pr"
 MERGE_METHOD = "squash"
@@ -45,6 +52,9 @@ API_ROOT = "https://api.github.com"
 API_VERSION = "2026-03-10"
 
 SHA_RE = re.compile(r"[0-9a-f]{40}\Z")
+CHECK_DETAILS_RE = re.compile(
+    rf"https://github\.com/{re.escape(REPOSITORY)}/actions/runs/(\d+)/job/(\d+)\Z"
+)
 
 
 class BrokerFailure(RuntimeError):
@@ -230,6 +240,8 @@ def build_manifest(
             "required_check": {
                 "app_id": REQUIRED_CHECK_APP_ID,
                 "name": REQUIRED_CHECK_NAME,
+                "workflow_id": REQUIRED_CHECK_WORKFLOW_ID,
+                "workflow_path": REQUIRED_CHECK_WORKFLOW_PATH,
             },
             "type": OPERATION_TYPE,
         },
@@ -306,7 +318,10 @@ def validate_manifest(manifest: Mapping[str, object]) -> dict[str, object]:
             "type",
         },
     )
-    _exact_keys(required_check, {"app_id", "name"})
+    _exact_keys(
+        required_check,
+        {"app_id", "name", "workflow_id", "workflow_path"},
+    )
     _exact_keys(authorization, {"environment", "max_run_age_seconds", "reviewer"})
     _exact_keys(reviewer, {"id", "login"})
 
@@ -674,7 +689,7 @@ def _validate_open_pull_request(
     pr_number: int,
     expected_base_sha: str,
     expected_head_sha: str,
-) -> None:
+) -> tuple[str, int]:
     pull = _mapping(payload, code="pull_request_evidence_invalid")
     if _required_int(pull, "number", "pull_request_mismatch") != pr_number:
         raise BrokerFailure("pull_request_mismatch", "The pull request number does not match.")
@@ -700,6 +715,12 @@ def _validate_open_pull_request(
         raise BrokerFailure("base_sha_mismatch", "The pull request base SHA has changed.")
     if head.get("sha") != expected_head_sha:
         raise BrokerFailure("head_sha_mismatch", "The pull request head SHA has changed.")
+    head_ref = head.get("ref")
+    if not isinstance(head_ref, str) or not head_ref:
+        raise BrokerFailure(
+            "pull_request_evidence_invalid",
+            "The pull request head branch cannot be proven.",
+        )
     if (
         base_repo.get("id") != REPOSITORY_ID
         or base_repo.get("full_name") != REPOSITORY
@@ -710,9 +731,67 @@ def _validate_open_pull_request(
             "pull_request_repository_mismatch",
             "The pull request is not fully contained in the target repository.",
         )
+    changed_files = _required_int(
+        pull,
+        "changed_files",
+        "pull_request_evidence_invalid",
+    )
+    if changed_files <= 0 or changed_files > MAX_PULL_REQUEST_FILES:
+        raise BrokerFailure(
+            "pull_request_file_count_rejected",
+            "The pull request file count is outside the closed Broker limit.",
+        )
+    return head_ref, changed_files
 
 
-def _validate_required_check(payload: object, *, expected_head_sha: str) -> None:
+def _is_protected_control_plane_path(path: str) -> bool:
+    return path.startswith(PROTECTED_CONTROL_PLANE_PREFIXES)
+
+
+def _validate_pull_request_files(payload: object, *, expected_count: int) -> None:
+    files = _list(payload, code="pull_request_files_invalid")
+    if len(files) != expected_count:
+        raise BrokerFailure(
+            "pull_request_files_incomplete",
+            "The complete pull request file list cannot be proven.",
+        )
+    observed: set[str] = set()
+    for item in files:
+        file_payload = _mapping(item, code="pull_request_files_invalid")
+        filename = _required_str(
+            file_payload,
+            "filename",
+            "pull_request_files_invalid",
+        )
+        paths = [filename]
+        previous_filename = file_payload.get("previous_filename")
+        if previous_filename is not None:
+            if not isinstance(previous_filename, str):
+                raise BrokerFailure(
+                    "pull_request_files_invalid",
+                    "A previous pull request filename is invalid.",
+                )
+            paths.append(previous_filename)
+        if filename in observed:
+            raise BrokerFailure(
+                "pull_request_files_invalid",
+                "The pull request file list contains duplicate paths.",
+            )
+        observed.add(filename)
+        if any(_is_protected_control_plane_path(path) for path in paths):
+            raise BrokerFailure(
+                "protected_control_plane_change",
+                "The Broker cannot merge a change to its protected control plane.",
+            )
+
+
+def _validate_required_check(
+    payload: object,
+    *,
+    client: object,
+    expected_head_ref: str,
+    expected_head_sha: str,
+) -> None:
     checks = _mapping(payload, code="check_evidence_invalid")
     runs = _list(checks.get("check_runs"), code="check_evidence_invalid")
     matching: list[Mapping[str, Any]] = []
@@ -736,6 +815,58 @@ def _validate_required_check(payload: object, *, expected_head_sha: str) -> None
     if check.get("status") != "completed" or check.get("conclusion") != "success":
         raise BrokerFailure(
             "required_check_not_successful", "The exact required check is not successful."
+        )
+    details_url = check.get("details_url")
+    details_match = (
+        CHECK_DETAILS_RE.fullmatch(details_url) if isinstance(details_url, str) else None
+    )
+    if details_match is None:
+        raise BrokerFailure(
+            "required_check_source_mismatch",
+            "The required check is not linked to the canonical GitHub Actions job.",
+        )
+    run_id = int(details_match.group(1))
+    job_id = int(details_match.group(2))
+    if check.get("id") != job_id:
+        raise BrokerFailure(
+            "required_check_source_mismatch",
+            "The required check job identity does not match its source URL.",
+        )
+    job = _mapping(
+        client.get(f"repos/{REPOSITORY}/actions/jobs/{job_id}"),
+        code="required_check_source_mismatch",
+    )
+    if (
+        job.get("id") != job_id
+        or job.get("name") != REQUIRED_CHECK_NAME
+        or job.get("head_sha") != expected_head_sha
+        or job.get("status") != "completed"
+        or job.get("conclusion") != "success"
+        or job.get("workflow_name") != REQUIRED_CHECK_NAME
+        or job.get("run_url")
+        != f"{API_ROOT}/repos/{REPOSITORY}/actions/runs/{run_id}"
+    ):
+        raise BrokerFailure(
+            "required_check_source_mismatch",
+            "The required check job does not match the canonical workflow contract.",
+        )
+    workflow_run = _mapping(
+        client.get(f"repos/{REPOSITORY}/actions/runs/{run_id}"),
+        code="required_check_source_mismatch",
+    )
+    if (
+        workflow_run.get("id") != run_id
+        or workflow_run.get("event") != "pull_request"
+        or workflow_run.get("workflow_id") != REQUIRED_CHECK_WORKFLOW_ID
+        or workflow_run.get("path") != REQUIRED_CHECK_WORKFLOW_PATH
+        or workflow_run.get("head_branch") != expected_head_ref
+        or workflow_run.get("head_sha") != expected_head_sha
+        or workflow_run.get("status") != "completed"
+        or workflow_run.get("conclusion") != "success"
+    ):
+        raise BrokerFailure(
+            "required_check_source_mismatch",
+            "The required check did not originate from the canonical pull-request workflow.",
         )
 
 
@@ -884,8 +1015,79 @@ def verify(manifest: Mapping[str, object], client: object) -> dict[str, object]:
         )
 
 
+def _verify_after_mutation(
+    manifest: Mapping[str, object],
+    client: object,
+    *,
+    sleep: Callable[[float], None],
+) -> dict[str, object]:
+    """Bound eventual-consistency reads without ever retrying the mutation."""
+
+    verification: dict[str, object] = {}
+    for attempt in range(VERIFY_ATTEMPTS):
+        verification = verify(manifest, client)
+        if verification.get("state") == "VERIFIED_COMMITTED":
+            return verification
+        if attempt + 1 < VERIFY_ATTEMPTS:
+            sleep(VERIFY_RETRY_SECONDS)
+    return verification
+
+
+def _recovery_failure(
+    *,
+    digest: str,
+    code: str,
+    message: str,
+    reported_merge_sha: object,
+    verification: Mapping[str, object],
+) -> dict[str, object]:
+    """Return closed reconciliation evidence for a possibly committed mutation."""
+
+    verification_errors = verification.get("errors")
+    if not isinstance(verification_errors, list):
+        verification_errors = []
+    safe_reported_sha = (
+        reported_merge_sha
+        if isinstance(reported_merge_sha, str) and SHA_RE.fullmatch(reported_merge_sha)
+        else None
+    )
+    return {
+        "errors": [BrokerFailure(code, message).as_dict()],
+        "ok": False,
+        "phase": "consume",
+        "recovery": {
+            "reported_merge_sha": safe_reported_sha,
+            "verification_errors": verification_errors,
+            "verification_state": verification.get("state"),
+        },
+        "request_digest": digest,
+        "state": "RECOVERY_REQUIRED",
+    }
+
+
+def _no_effect_after_attempt(
+    *,
+    digest: str,
+    failure: BrokerFailure,
+) -> dict[str, object]:
+    """Report a consumed mutation attempt whose no-effect state is proven."""
+
+    return {
+        "errors": [failure.as_dict()],
+        "ok": False,
+        "phase": "consume",
+        "request_digest": digest,
+        "state": "REJECTED_NO_EFFECT",
+    }
+
+
 def _consume(
-    manifest: Mapping[str, object], client: object, now: datetime
+    manifest: Mapping[str, object],
+    client: object,
+    *,
+    clock: Callable[[], datetime],
+    mutation_state: dict[str, bool],
+    sleep: Callable[[float], None],
 ) -> dict[str, object]:
     canonical = validate_manifest(manifest)
     digest = request_digest(canonical)
@@ -893,13 +1095,13 @@ def _consume(
     operation = _mapping(canonical["operation"], code="manifest_shape_mismatch")
     run_endpoint = f"repos/{REPOSITORY}/actions/runs/{run['id']}"
 
-    _validate_run(client.get(run_endpoint), canonical, now)
+    _validate_run(client.get(run_endpoint), canonical, clock())
     approval_environment_id = _validate_approval(
         client.get(f"{run_endpoint}/approvals"), digest
     )
 
     # Everything capable of drifting is read again after approval validation.
-    _validate_run(client.get(run_endpoint), canonical, now)
+    _validate_run(client.get(run_endpoint), canonical, clock())
     _validate_repository(client.get(f"repos/{REPOSITORY}"))
     _validate_environment(
         client.get(f"repos/{REPOSITORY}/environments/{ENVIRONMENT_NAME}"),
@@ -915,11 +1117,18 @@ def _consume(
         client.get(f"repos/{REPOSITORY}/branches/{DEFAULT_BRANCH}"),
         operation["expected_base_sha"],
     )
-    _validate_open_pull_request(
+    expected_head_ref, changed_file_count = _validate_open_pull_request(
         client.get(f"repos/{REPOSITORY}/pulls/{operation['pull_request_number']}"),
         pr_number=operation["pull_request_number"],
         expected_base_sha=operation["expected_base_sha"],
         expected_head_sha=operation["expected_head_sha"],
+    )
+    _validate_pull_request_files(
+        client.get(
+            f"repos/{REPOSITORY}/pulls/{operation['pull_request_number']}"
+            "/files?per_page=100"
+        ),
+        expected_count=changed_file_count,
     )
     query = parse.urlencode(
         {
@@ -932,7 +1141,18 @@ def _consume(
         client.get(
             f"repos/{REPOSITORY}/commits/{operation['expected_head_sha']}/check-runs?{query}"
         ),
+        client=client,
+        expected_head_ref=expected_head_ref,
         expected_head_sha=operation["expected_head_sha"],
+    )
+
+    # Refresh time and base immediately before the only mutation attempt. The
+    # REST merge API has no atomic expected-base precondition, so the residual
+    # race remains explicitly documented and is detected again after effect.
+    _validate_run(client.get(run_endpoint), canonical, clock())
+    _validate_branch(
+        client.get(f"repos/{REPOSITORY}/branches/{DEFAULT_BRANCH}"),
+        operation["expected_base_sha"],
     )
 
     merge_endpoint = (
@@ -942,18 +1162,29 @@ def _consume(
         "merge_method": MERGE_METHOD,
         "sha": operation["expected_head_sha"],
     }
+    mutation_state["attempted"] = True
+    explicit_failure: BrokerFailure | None = None
     try:
         response = client.put(merge_endpoint, merge_body)
-    except BrokerFailure:
-        raise
+    except BrokerFailure as exc:
+        # A typed API rejection still occurred after the mutation boundary.
+        # Reconcile it before reporting that no effect happened.
+        explicit_failure = exc
+        response = {"merged": False, "sha": None}
     except Exception:
         response = None
-        response_ambiguous = True
-    else:
-        response_ambiguous = not isinstance(response, dict) or response.get("merged") is not True
 
-    if response_ambiguous:
-        verification = verify(canonical, client)
+    response_is_mapping = isinstance(response, dict)
+    response_reports_commit = response_is_mapping and response.get("merged") is True
+    response_reports_rejection = response_is_mapping and response.get("merged") is False
+    reported_merge_sha = response.get("sha") if response_is_mapping else None
+    verification = (
+        verify(canonical, client)
+        if response_reports_rejection
+        else _verify_after_mutation(canonical, client, sleep=sleep)
+    )
+
+    if not response_reports_commit:
         if verification.get("state") == "VERIFIED_COMMITTED":
             receipt = dict(verification["receipt"])
             receipt["reconciled"] = True
@@ -965,27 +1196,33 @@ def _consume(
                 "request_digest": digest,
                 "state": "COMMITTED",
             }
-        return _safe_failure(
-            "consume",
-            "RECOVERY_REQUIRED",
-            BrokerFailure(
-                "effect_ambiguous",
-                "The merge effect is not provable; do not retry the mutation.",
-            ),
-            digest,
+        if (
+            response_reports_rejection
+            and verification.get("state") == "VERIFIED_NOT_COMMITTED"
+        ):
+            return _no_effect_after_attempt(
+                digest=digest,
+                failure=explicit_failure
+                or BrokerFailure(
+                    "github_merge_rejected",
+                    "GitHub explicitly rejected the merge and readback proves no effect.",
+                ),
+            )
+        return _recovery_failure(
+            digest=digest,
+            code="effect_ambiguous",
+            message="The merge effect is not provable; do not retry the mutation.",
+            reported_merge_sha=reported_merge_sha,
+            verification=verification,
         )
 
-    reported_merge_sha = response.get("sha")
-    verification = verify(canonical, client)
     if verification.get("state") != "VERIFIED_COMMITTED":
-        return _safe_failure(
-            "consume",
-            "RECOVERY_REQUIRED",
-            BrokerFailure(
-                "effect_verification_failed",
-                "GitHub reported a merge but readback could not prove the exact effect.",
-            ),
-            digest,
+        return _recovery_failure(
+            digest=digest,
+            code="effect_verification_failed",
+            message="GitHub reported a merge but readback could not prove the exact effect.",
+            reported_merge_sha=reported_merge_sha,
+            verification=verification,
         )
     receipt = dict(verification["receipt"])
     if (
@@ -993,14 +1230,12 @@ def _consume(
         or not SHA_RE.fullmatch(reported_merge_sha)
         or reported_merge_sha != receipt.get("merge_commit_sha")
     ):
-        return _safe_failure(
-            "consume",
-            "RECOVERY_REQUIRED",
-            BrokerFailure(
-                "merge_response_mismatch",
-                "The merge response SHA does not match the verified merge commit.",
-            ),
-            digest,
+        return _recovery_failure(
+            digest=digest,
+            code="merge_response_mismatch",
+            message="The merge response SHA does not match the verified merge commit.",
+            reported_merge_sha=reported_merge_sha,
+            verification=verification,
         )
     receipt["reconciled"] = False
     return {
@@ -1018,17 +1253,88 @@ def consume(
     client: object,
     *,
     now: datetime | None = None,
+    clock: Callable[[], datetime] | None = None,
+    sleep: Callable[[float], None] | None = None,
 ) -> dict[str, object]:
     """Validate one approval and perform at most one exact merge API request."""
 
     digest: str | None = None
+    canonical: Mapping[str, object] | None = None
+    mutation_state = {"attempted": False}
     try:
         canonical = validate_manifest(manifest)
         digest = request_digest(canonical)
-        return _consume(canonical, client, now or datetime.now(timezone.utc))
+        if now is not None and clock is not None:
+            raise BrokerFailure(
+                "clock_configuration_invalid",
+                "A fixed time and a clock cannot be supplied together.",
+            )
+        effective_clock = clock or (
+            (lambda: now) if now is not None else (lambda: datetime.now(timezone.utc))
+        )
+        effective_sleep = sleep or time.sleep
+        return _consume(
+            canonical,
+            client,
+            clock=effective_clock,
+            mutation_state=mutation_state,
+            sleep=effective_sleep,
+        )
     except BrokerFailure as exc:
+        if mutation_state["attempted"] and canonical is not None and digest is not None:
+            verification = _verify_after_mutation(
+                canonical,
+                client,
+                sleep=sleep or time.sleep,
+            )
+            if verification.get("state") == "VERIFIED_COMMITTED":
+                receipt = dict(verification["receipt"])
+                receipt["reconciled"] = True
+                return {
+                    "errors": [],
+                    "ok": True,
+                    "phase": "consume",
+                    "receipt": receipt,
+                    "request_digest": digest,
+                    "state": "COMMITTED",
+                }
+            return _recovery_failure(
+                digest=digest,
+                code="broker_failure_after_mutation",
+                message=(
+                    "The broker failed after attempting the mutation; do not retry it."
+                ),
+                reported_merge_sha=None,
+                verification=verification,
+            )
         return _safe_failure("consume", "ABORTED_PRE_EFFECT", exc, digest)
     except Exception:
+        if mutation_state["attempted"] and canonical is not None and digest is not None:
+            verification = _verify_after_mutation(
+                canonical,
+                client,
+                sleep=sleep or time.sleep,
+            )
+            if verification.get("state") == "VERIFIED_COMMITTED":
+                receipt = dict(verification["receipt"])
+                receipt["reconciled"] = True
+                return {
+                    "errors": [],
+                    "ok": True,
+                    "phase": "consume",
+                    "receipt": receipt,
+                    "request_digest": digest,
+                    "state": "COMMITTED",
+                }
+            return _recovery_failure(
+                digest=digest,
+                code="broker_internal_failure_after_mutation",
+                message=(
+                    "The broker failed after attempting the mutation; do not retry it."
+                ),
+                reported_merge_sha=None,
+                verification=verification,
+            )
         return _safe_failure(
             "consume",
             "ABORTED_PRE_EFFECT",

@@ -51,7 +51,7 @@ jobs:
           set -uo pipefail
           prepared_path="$RUNNER_TEMP/c-authorization-prepare.json"
           set +e
-          python3 scripts/c_authorization_broker.py prepare \
+          python3 -I scripts/c_authorization_broker.py prepare \
             --run-id "$BROKER_RUN_ID" \
             --run-attempt "$BROKER_RUN_ATTEMPT" \
             --workflow-ref "$BROKER_WORKFLOW_REF" \
@@ -72,8 +72,8 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
             exit "$prepare_exit"
           fi
-          approval_comment="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["approval_comment"])' "$prepared_path")"
-          request_digest="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["request_digest"])' "$prepared_path")"
+          approval_comment="$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["approval_comment"])' "$prepared_path")"
+          request_digest="$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["request_digest"])' "$prepared_path")"
           {
             printf '## C authorization request\n\n'
             printf 'Approve only this exact comment in the protected Environment gate:\n\n'
@@ -115,7 +115,7 @@ jobs:
           set -uo pipefail
           result_path="$RUNNER_TEMP/c-authorization-result.json"
           set +e
-          python3 scripts/c_authorization_broker.py consume \
+          python3 -I scripts/c_authorization_broker.py consume \
             --run-id "$BROKER_RUN_ID" \
             --run-attempt "$BROKER_RUN_ATTEMPT" \
             --workflow-ref "$BROKER_WORKFLOW_REF" \

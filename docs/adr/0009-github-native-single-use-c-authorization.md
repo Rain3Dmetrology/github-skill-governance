@@ -1,6 +1,6 @@
 # ADR-0009: GitHub-native single-use C authorization
 
-- Status: Accepted architecture; Environment active; PR-B1 workflow candidate
+- Status: Active and remote-canary tested; production C blockers remain
 - Date: 2026-08-31
 - Issue: [#1](https://github.com/Rain3Dmetrology/github-skill-governance/issues/1)
 
@@ -29,27 +29,30 @@ The first and only supported route is `merge-exact-pr`:
 - repository ID `1350230486` and full name are fixed;
 - base branch is `main` and both base and PR head SHA are bound;
 - the required `governance-baseline` check must succeed from GitHub Actions App
-  ID `15368`;
+  ID `15368` and the canonical pull-request workflow ID/path/job/run;
 - the PR must be open, non-draft, and mergeable;
 - the merge method is always squash;
 - the executor issues at most one mutation request;
 - one repository-wide workflow concurrency group serializes Broker runs;
-- readback proves that the squash commit has exactly the authorized base SHA as
-  its parent, closing the preflight-to-merge race;
+- readback proves whether the squash commit has exactly the authorized base SHA
+  as its parent; it detects but cannot prevent an external-writer race because
+  GitHub's merge REST endpoint has no atomic expected-base precondition;
 - a transport-ambiguous result is reconciled by readback and becomes
   `RECOVERY_REQUIRED` when the effect cannot be proven.
 
-The future canonical workflow path is
-`.github/workflows/c-merge-exact-pr.yml`. It is intentionally absent in PR-B0.
+The canonical workflow path is
+`.github/workflows/c-merge-exact-pr.yml`. It was intentionally absent in PR-B0
+and became active only after the protected Environment was read back.
 The closed request manifest is
 `.github/governance/c-authorization-broker.schema.json`; the workflow revision
 must equal the expected `main` base SHA, which transitively binds the executor
 and repository policy at the approved revision.
 
-PR-B1 adds that path as an exact canonical candidate with a read-only prepare
-job and one Environment-gated consume job. It remains inactive until the PR is
-separately merged and is not accepted as production-ready until remote canaries
-and PR-B2 evidence close Issue #1.
+PR-B1 added that path with a read-only prepare job and one Environment-gated
+consume job. Remote canaries proved the tested one-shot route. It is not
+accepted as production C-grade until a distinct machine identity, independent
+approver, protected validator source, and exclusive `main` update route remove
+the blockers recorded in the acceptance document.
 
 The exact approval comment is `APPROVE-C1 sha256:<request-digest>`. The digest
 uses canonical JSON and includes `run_id` and `run_attempt`. Only attempt 1 is

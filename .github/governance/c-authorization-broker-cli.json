@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "canonical-workflow-candidate",
+  "status": "active-evaluated-single-owner",
   "script": "scripts/c_authorization_broker.py",
   "manifestSchema": ".github/governance/c-authorization-broker.schema.json",
   "approvalCommentFormat": "APPROVE-C1 sha256:<64-lowercase-hex>",
@@ -26,6 +26,7 @@
       ],
       "failureStates": [
         "ABORTED_PRE_EFFECT",
+        "REJECTED_NO_EFFECT",
         "RECOVERY_REQUIRED"
       ]
     },
@@ -80,5 +81,10 @@
     "ok",
     "phase",
     "state"
+  ],
+  "recoveryFields": [
+    "reported_merge_sha",
+    "verification_errors",
+    "verification_state"
   ]
 }

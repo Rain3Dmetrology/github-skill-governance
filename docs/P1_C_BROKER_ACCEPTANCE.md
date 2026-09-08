@@ -2,8 +2,9 @@
 
 - Started: 2026-08-31
 - Issue: [#1](https://github.com/Rain3Dmetrology/github-skill-governance/issues/1)
-- Current state: PR-B0 and Environment activation merged; PR-B1 canonical
-  workflow candidate is local only and not active on `main`
+- Current state: PR-B0, Environment activation, and PR-B1 are active on
+  `main`; the remote canary completed one exact merge, but production C-grade
+  exclusivity and independent approval are not yet enforceable
 
 This record separates architecture, installation, remote activation, effect,
 and post-effect evidence. An unchecked item is not an implied pass.
@@ -55,40 +56,65 @@ The correction diff, runtime hardening, and W-action decision are recorded in
   or local action, and no generic API input.
 - [x] Permissions are exact per job; only the consume job has the single write
   permission needed for the merge route.
-- [ ] The workflow and validator are merged through a separately authorized C
-  action; the Broker is not credited with its own bootstrap merge.
+- [x] The workflow and validator were merged through a separately authorized C
+  action; the Broker was not credited with its own bootstrap merge.
 
 The operator procedure and no-retry recovery path are frozen in
 [`C_AUTHORIZATION_BROKER.md`](./runbooks/C_AUTHORIZATION_BROKER.md). Checked
-PR-B1 items above describe this feature-branch candidate; they do not prove
-remote activation or canary success. Local and point-in-time remote evidence is
-recorded in
+PR-B1 items above describe the bootstrap boundary. Local and point-in-time
+pre-activation evidence is recorded in
 [`P1_C_WORKFLOW_LOCAL_CANDIDATE_2026-09-03.md`](./evidence/P1_C_WORKFLOW_LOCAL_CANDIDATE_2026-09-03.md).
 
 ## Remote negative and replay tests
 
-- [ ] Unapproved run waits and produces no mutation.
-- [ ] Wrong approval digest fails before effect.
-- [ ] Wrong base or head SHA fails before effect.
-- [ ] Expired run fails before effect.
-- [ ] Run attempt 2 fails before effect.
-- [ ] A new dispatch with identical PR inputs requires a new approval.
-- [ ] Ambiguous transport result is reconciled and never blindly retried.
+- [x] Unapproved run waits and produces no mutation.
+- [x] Wrong approval digest fails before effect.
+- [x] Wrong base or head SHA fails before effect.
+- [x] Expired run fails before effect.
+- [x] Run attempt 2 fails before effect.
+- [x] A new dispatch with identical PR inputs requires a new approval.
+- [x] Ambiguous transport result is reconciled and never blindly retried in
+  deterministic fault-injection tests; a live ambiguous network effect was
+  deliberately not induced.
 
 ## Positive canary and closure
 
-- [ ] One no-side-effect acceptance PR is squash-merged through the Broker.
-- [ ] Independent readback proves the exact PR, head SHA, merge commit, and new
+- [x] One no-side-effect acceptance PR is squash-merged through the Broker.
+- [x] Independent readback proves the exact PR, head SHA, merge commit, and new
   `main` SHA.
-- [ ] Authorization, execution, verification, and consumption receipts agree.
-- [ ] Tag count, Release count, repository Secret count, and Environment Secret
+- [x] Authorization, execution, and independent verification agree. The first
+  in-job readback correctly entered `RECOVERY_REQUIRED` until GitHub's
+  eventually consistent state became provable; it was not retried.
+- [x] Tag count, Release count, repository Secret count, and Environment Secret
   count remain zero.
-- [ ] Remote evidence is committed by PR-B2.
-- [ ] Issue #1 is closed only after all items above are checked.
+- [ ] Remote evidence and reconciliation hardening are committed by PR-B2.
+- [ ] Issue #1 is closed only after the production blockers below are removed;
+  remote canary success alone is insufficient.
 
-## Explicit residual
+## Production blockers
 
-The only maintainer may dispatch and approve the same run. This is not
-independent two-person review. Until another trusted maintainer exists, the
-control is accepted only as two separate human actions protected by an exact
-digest, short expiry, server audit history, and a one-route executor.
+The current route is a tested single-owner confirmation mechanism, not a
+production C-grade authorization boundary:
+
+1. The owner can dispatch and approve the same run, so the approval is not
+   independent. An agent holding that owner's token is not separated from the
+   approver identity.
+2. The active `main` Ruleset permits an ordinary squash merge after the status
+   check; it does not make the Broker the exclusive update principal.
+3. GitHub's pull-request merge REST endpoint binds the expected head SHA but
+   has no atomic expected-base precondition. Exact-parent readback detects a
+   race after effect but cannot prevent it while another writer can update
+   `main`.
+4. The Broker now binds the check to the canonical workflow ID/path/event and
+   rejects PRs that change any path under `.github/` or `scripts/`.
+   This protects the check root inside the Broker route, but ordinary owner
+   merge authority can still bypass that route.
+
+Closure requires a distinct least-privilege GitHub App or machine identity,
+separate human approval with `prevent_self_review=true`, and a Ruleset or queue
+that serializes every `main` update through that identity. Until then, agents
+must not receive standing owner credentials and this Broker must not be
+presented as protection against account compromise.
+
+Remote runs, exact SHAs, and zero-side-effect inventories are recorded in
+[`P1_C_REMOTE_CANARY_2026-09-04.md`](./evidence/P1_C_REMOTE_CANARY_2026-09-04.md).
