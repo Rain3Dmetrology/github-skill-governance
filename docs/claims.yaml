@@ -63,6 +63,7 @@ claims:
       - docs/evidence/P1_C_WORKFLOW_LOCAL_CANDIDATE_2026-09-03.md
       - docs/evidence/P1_C_WORKFLOW_REVIEW_PACK_2026-09-03.md
       - docs/evidence/P1_C_REMOTE_CANARY_2026-09-04.md
+      - docs/evidence/P1_C_EFFECT_RECONCILIATION_2026-09-16.md
       - docs/adr/0009-github-native-single-use-c-authorization.md
       - docs/threat-models/C_AUTHORIZATION_BROKER.md
 

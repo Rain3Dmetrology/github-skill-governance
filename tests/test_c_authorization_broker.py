@@ -82,6 +82,9 @@ class FakeGitHubClient:
         merge_response_sha: str = MERGE_SHA,
         merge_parent_sha: str = BASE_SHA,
         post_merge_branch_sha: str = MERGE_SHA,
+        pull_merge_commit_sha_missing: bool = False,
+        associated_pr_number: int = PR_NUMBER,
+        associated_pr_count: int = 1,
         pr_draft: bool = False,
         check_conclusion: str = "success",
     ) -> None:
@@ -124,6 +127,9 @@ class FakeGitHubClient:
         self.merge_response_sha = merge_response_sha
         self.merge_parent_sha = merge_parent_sha
         self.post_merge_branch_sha = post_merge_branch_sha
+        self.pull_merge_commit_sha_missing = pull_merge_commit_sha_missing
+        self.associated_pr_number = associated_pr_number
+        self.associated_pr_count = associated_pr_count
         self.pr_draft = pr_draft
         self.check_conclusion = check_conclusion
         self.merged = False
@@ -275,7 +281,11 @@ class FakeGitHubClient:
                 "mergeable": self.mergeable,
                 "merged": is_merged,
                 "merged_at": "2026-08-31T00:05:10Z" if is_merged else None,
-                "merge_commit_sha": MERGE_SHA if is_merged else None,
+                "merge_commit_sha": (
+                    None
+                    if self.pull_merge_commit_sha_missing or not is_merged
+                    else MERGE_SHA
+                ),
                 "changed_files": len(self.changed_files),
                 "base": {
                     "ref": broker.DEFAULT_BRANCH,
@@ -341,6 +351,32 @@ class FakeGitHubClient:
                 "sha": MERGE_SHA,
                 "parents": [{"sha": self.merge_parent_sha}],
             }
+        if endpoint == (
+            f"repos/{broker.REPOSITORY}/commits/{MERGE_SHA}/pulls?per_page=100"
+        ):
+            return [
+                {
+                    "number": self.associated_pr_number,
+                    "state": "closed",
+                    "merged_at": "2026-08-31T00:05:10Z",
+                    "base": {
+                        "ref": broker.DEFAULT_BRANCH,
+                        "sha": BASE_SHA,
+                        "repo": {
+                            "id": self.repository_id,
+                            "full_name": broker.REPOSITORY,
+                        },
+                    },
+                    "head": {
+                        "sha": self.pr_head_sha,
+                        "repo": {
+                            "id": self.repository_id,
+                            "full_name": broker.REPOSITORY,
+                        },
+                    },
+                }
+                for _ in range(self.associated_pr_count)
+            ]
         raise AssertionError(f"unexpected GET endpoint: {endpoint}")
 
     def put(self, endpoint: str, body: dict[str, object]) -> object:
@@ -941,6 +977,51 @@ class AuthorizationBrokerTests(unittest.TestCase):
         self.assertEqual(broker._exit_for(uncommitted_result), broker.EXIT_FAILED)
         self.assertEqual(uncommitted.put_calls, [])
 
+    def test_verify_uses_commit_association_when_new_api_omits_merge_sha(self) -> None:
+        manifest = build_manifest()
+        committed = FakeGitHubClient(
+            manifest, pull_merge_commit_sha_missing=True
+        )
+        committed.merged = True
+
+        result = broker.verify(manifest, committed)
+
+        self.assertEqual(result["state"], "VERIFIED_COMMITTED")
+        self.assertEqual(result["receipt"]["merge_commit_sha"], MERGE_SHA)
+        self.assertIn(
+            f"repos/{broker.REPOSITORY}/commits/{MERGE_SHA}/pulls?per_page=100",
+            committed.get_calls,
+        )
+        self.assertEqual(committed.put_calls, [])
+
+        unrelated = FakeGitHubClient(
+            manifest,
+            pull_merge_commit_sha_missing=True,
+            associated_pr_number=PR_NUMBER + 1,
+        )
+        unrelated.merged = True
+        rejected = broker.verify(manifest, unrelated)
+        self.assertEqual(rejected["state"], "RECOVERY_REQUIRED")
+        self.assertIn(
+            "merge_commit_association_invalid",
+            [item["code"] for item in rejected["errors"]],
+        )
+        self.assertEqual(unrelated.put_calls, [])
+
+        duplicate = FakeGitHubClient(
+            manifest,
+            pull_merge_commit_sha_missing=True,
+            associated_pr_count=2,
+        )
+        duplicate.merged = True
+        duplicate_result = broker.verify(manifest, duplicate)
+        self.assertEqual(duplicate_result["state"], "RECOVERY_REQUIRED")
+        self.assertIn(
+            "merge_commit_association_invalid",
+            [item["code"] for item in duplicate_result["errors"]],
+        )
+        self.assertEqual(duplicate.put_calls, [])
+
     def test_workflow_sha_must_be_current_expected_base_sha(self) -> None:
         with self.assertRaises(broker.BrokerFailure) as raised:
             build_manifest(workflow_sha="6" * 40)
@@ -989,7 +1070,6 @@ class AuthorizationBrokerTests(unittest.TestCase):
         self.assertNotIn("Authorization", rendered)
         self.assertNotIn(str(ROOT), rendered)
         self.assertFalse(hasattr(broker, "subprocess"))
-
 
 if __name__ == "__main__":
     unittest.main()

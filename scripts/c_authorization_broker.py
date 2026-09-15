@@ -891,6 +891,61 @@ def _receipt(
     }
 
 
+def _validate_merge_commit_association(
+    payload: object,
+    *,
+    pr_number: int,
+    expected_base_sha: str,
+    expected_head_sha: str,
+) -> None:
+    associations = _list(payload, code="merge_commit_association_invalid")
+    matches = 0
+    for item in associations:
+        pull = _mapping(item, code="merge_commit_association_invalid")
+        base = _mapping(pull.get("base"), code="merge_commit_association_invalid")
+        head = _mapping(pull.get("head"), code="merge_commit_association_invalid")
+        base_repo = _mapping(
+            base.get("repo"), code="merge_commit_association_invalid"
+        )
+        head_repo = _mapping(
+            head.get("repo"), code="merge_commit_association_invalid"
+        )
+        if (
+            pull.get("number") == pr_number
+            and pull.get("state") == "closed"
+            and isinstance(pull.get("merged_at"), str)
+            and base.get("ref") == DEFAULT_BRANCH
+            and base.get("sha") == expected_base_sha
+            and head.get("sha") == expected_head_sha
+            and base_repo.get("id") == REPOSITORY_ID
+            and base_repo.get("full_name") == REPOSITORY
+            and head_repo.get("id") == REPOSITORY_ID
+            and head_repo.get("full_name") == REPOSITORY
+        ):
+            matches += 1
+    if matches != 1:
+        raise BrokerFailure(
+            "merge_commit_association_invalid",
+            "The main commit is not uniquely associated with the authorized pull request.",
+        )
+
+
+def _read_main_sha(client: object) -> str:
+    branch = _mapping(
+        client.get(f"repos/{REPOSITORY}/branches/{DEFAULT_BRANCH}"),
+        code="branch_evidence_invalid",
+    )
+    if branch.get("name") != DEFAULT_BRANCH:
+        raise BrokerFailure("base_ref_mismatch", "The base branch is not main.")
+    branch_commit = _mapping(branch.get("commit"), code="branch_evidence_invalid")
+    branch_sha = branch_commit.get("sha")
+    if not isinstance(branch_sha, str) or not SHA_RE.fullmatch(branch_sha):
+        raise BrokerFailure(
+            "branch_evidence_invalid", "The main branch commit is invalid."
+        )
+    return branch_sha
+
+
 def _verify_exact_effect(
     manifest: Mapping[str, object], client: object
 ) -> tuple[str, str | None]:
@@ -913,6 +968,7 @@ def _verify_exact_effect(
     head_repo = _mapping(head.get("repo"), code="pull_request_evidence_invalid")
     exact_identity = (
         base.get("ref") == DEFAULT_BRANCH
+        and base.get("sha") == expected_base_sha
         and head.get("sha") == expected_head_sha
         and base_repo.get("id") == REPOSITORY_ID
         and base_repo.get("full_name") == REPOSITORY
@@ -928,9 +984,21 @@ def _verify_exact_effect(
         if (
             pull.get("state") != "closed"
             or not isinstance(pull.get("merged_at"), str)
-            or not isinstance(merge_sha, str)
-            or not SHA_RE.fullmatch(merge_sha)
         ):
+            raise BrokerFailure(
+                "effect_evidence_invalid", "The merge effect cannot be proven from readback."
+            )
+        if merge_sha is None:
+            merge_sha = _read_main_sha(client)
+            _validate_merge_commit_association(
+                client.get(
+                    f"repos/{REPOSITORY}/commits/{merge_sha}/pulls?per_page=100"
+                ),
+                pr_number=pr_number,
+                expected_base_sha=expected_base_sha,
+                expected_head_sha=expected_head_sha,
+            )
+        elif not isinstance(merge_sha, str) or not SHA_RE.fullmatch(merge_sha):
             raise BrokerFailure(
                 "effect_evidence_invalid", "The merge effect cannot be proven from readback."
             )
@@ -955,14 +1023,7 @@ def _verify_exact_effect(
                 "merge_base_not_exact",
                 "The squash merge was not created from the authorized base commit.",
             )
-        branch = _mapping(
-            client.get(f"repos/{REPOSITORY}/branches/{DEFAULT_BRANCH}"),
-            code="branch_evidence_invalid",
-        )
-        if branch.get("name") != DEFAULT_BRANCH:
-            raise BrokerFailure("base_ref_mismatch", "The base branch is not main.")
-        branch_commit = _mapping(branch.get("commit"), code="branch_evidence_invalid")
-        if branch_commit.get("sha") != merge_sha:
+        if _read_main_sha(client) != merge_sha:
             raise BrokerFailure(
                 "merge_commit_not_main_tip",
                 "The exact merge commit is not the current main branch tip.",

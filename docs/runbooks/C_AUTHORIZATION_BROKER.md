@@ -99,7 +99,14 @@ before deciding anything else:
 gh api repos/Rain3Dmetrology/github-skill-governance/pulls/PR_NUMBER
 gh api repos/Rain3Dmetrology/github-skill-governance/commits/main
 gh api repos/Rain3Dmetrology/github-skill-governance/commits/EXPECTED_MERGE_SHA
+gh api repos/Rain3Dmetrology/github-skill-governance/commits/EXPECTED_MERGE_SHA/pulls
 ```
+
+Under REST API `2026-03-10`, a merged pull may return a null
+`merge_commit_sha`. Do not infer success from that pull alone. The read-only
+`verify` route may use the current `main` tip as a candidate only when GitHub's
+commit-association endpoint uniquely binds it to the authorized PR/base/head;
+the exact-parent and current-tip checks still apply.
 
 ## Independent closure evidence
 
