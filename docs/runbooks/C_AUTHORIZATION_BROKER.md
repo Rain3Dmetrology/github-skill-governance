@@ -100,13 +100,16 @@ gh api repos/Rain3Dmetrology/github-skill-governance/pulls/PR_NUMBER
 gh api repos/Rain3Dmetrology/github-skill-governance/commits/main
 gh api repos/Rain3Dmetrology/github-skill-governance/commits/EXPECTED_MERGE_SHA
 gh api repos/Rain3Dmetrology/github-skill-governance/commits/EXPECTED_MERGE_SHA/pulls
+gh api repos/Rain3Dmetrology/github-skill-governance/compare/EXPECTED_MERGE_SHA...main
 ```
 
 Under REST API `2026-03-10`, a merged pull may return a null
 `merge_commit_sha`. Do not infer success from that pull alone. The read-only
-`verify` route may use the current `main` tip as a candidate only when GitHub's
-commit-association endpoint uniquely binds it to the authorized PR/base/head;
-the exact-parent and current-tip checks still apply.
+`verify` route queries GraphQL `PullRequest.mergeCommit` only in this case,
+then requires the REST commit-association endpoint to bind that SHA uniquely
+to the authorized PR/base/head. It also requires the exact authorized parent,
+requires the commit to remain an ancestor of `main`, and re-reads `main` to
+reject a changing verification snapshot.
 
 ## Independent closure evidence
 

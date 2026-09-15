@@ -24,6 +24,7 @@ SPEC.loader.exec_module(broker)
 BASE_SHA = "1" * 40
 HEAD_SHA = "2" * 40
 MERGE_SHA = "3" * 40
+DESCENDANT_SHA = "a" * 40
 RUN_ID = 987654321
 PR_NUMBER = 42
 HEAD_REF = "feature"
@@ -85,6 +86,9 @@ class FakeGitHubClient:
         pull_merge_commit_sha_missing: bool = False,
         associated_pr_number: int = PR_NUMBER,
         associated_pr_count: int = 1,
+        graphql_merge_sha: str | None = MERGE_SHA,
+        graphql_parent_sha: str = BASE_SHA,
+        compare_status: str | None = None,
         pr_draft: bool = False,
         check_conclusion: str = "success",
     ) -> None:
@@ -130,10 +134,14 @@ class FakeGitHubClient:
         self.pull_merge_commit_sha_missing = pull_merge_commit_sha_missing
         self.associated_pr_number = associated_pr_number
         self.associated_pr_count = associated_pr_count
+        self.graphql_merge_sha = graphql_merge_sha
+        self.graphql_parent_sha = graphql_parent_sha
+        self.compare_status = compare_status
         self.pr_draft = pr_draft
         self.check_conclusion = check_conclusion
         self.merged = False
         self.get_calls: list[str] = []
+        self.graphql_calls: list[tuple[str, dict[str, object]]] = []
         self.put_calls: list[tuple[str, dict[str, object]]] = []
 
     @staticmethod
@@ -377,7 +385,65 @@ class FakeGitHubClient:
                 }
                 for _ in range(self.associated_pr_count)
             ]
+        if endpoint == (
+            f"repos/{broker.REPOSITORY}/compare/{MERGE_SHA}..."
+            f"{broker.DEFAULT_BRANCH}?per_page=1"
+        ):
+            status = self.compare_status or (
+                "identical"
+                if self.post_merge_branch_sha == MERGE_SHA
+                else "ahead"
+            )
+            merge_base_sha = (
+                MERGE_SHA if status in {"ahead", "identical"} else BASE_SHA
+            )
+            return {
+                "status": status,
+                "ahead_by": 0 if status == "identical" else 1,
+                "behind_by": 0 if status in {"ahead", "identical"} else 1,
+                "base_commit": {"sha": MERGE_SHA},
+                "head_commit": {"sha": self.post_merge_branch_sha},
+                "merge_base_commit": {"sha": merge_base_sha},
+            }
         raise AssertionError(f"unexpected GET endpoint: {endpoint}")
+
+    def graphql(self, query: str, variables: dict[str, object]) -> object:
+        self.graphql_calls.append((query, copy.deepcopy(variables)))
+        return {
+            "data": {
+                "repository": {
+                    "databaseId": self.repository_id,
+                    "nameWithOwner": broker.REPOSITORY,
+                    "pullRequest": {
+                        "number": PR_NUMBER,
+                        "state": "MERGED",
+                        "merged": True,
+                        "mergedAt": "2026-08-31T00:05:10Z",
+                        "baseRefName": broker.DEFAULT_BRANCH,
+                        "baseRefOid": BASE_SHA,
+                        "headRefOid": self.pr_head_sha,
+                        "baseRepository": {
+                            "databaseId": self.repository_id,
+                            "nameWithOwner": broker.REPOSITORY,
+                        },
+                        "headRepository": {
+                            "databaseId": self.repository_id,
+                            "nameWithOwner": broker.REPOSITORY,
+                        },
+                        "mergeCommit": (
+                            {
+                                "oid": self.graphql_merge_sha,
+                                "parents": {
+                                    "nodes": [{"oid": self.graphql_parent_sha}]
+                                },
+                            }
+                            if self.graphql_merge_sha is not None
+                            else None
+                        ),
+                    },
+                }
+            }
+        }
 
     def put(self, endpoint: str, body: dict[str, object]) -> object:
         self.put_calls.append((endpoint, copy.deepcopy(body)))
@@ -409,6 +475,31 @@ class AuthorizationBrokerTests(unittest.TestCase):
         sleep_patch = mock.patch.object(broker.time, "sleep", return_value=None)
         sleep_patch.start()
         self.addCleanup(sleep_patch.stop)
+
+    def test_graphql_client_uses_fixed_read_only_query_contract(self) -> None:
+        response = mock.MagicMock()
+        response.__enter__.return_value.read.return_value = b'{"data":{"ok":true}}'
+        variables: dict[str, object] = {
+            "owner": "Rain3Dmetrology",
+            "name": "github-skill-governance",
+            "number": PR_NUMBER,
+        }
+
+        with mock.patch.object(
+            broker.request, "urlopen", return_value=response
+        ) as open_mock:
+            result = broker.GitHubApiClient("test-token").graphql(
+                broker.MERGE_COMMIT_QUERY, variables
+            )
+
+        api_request = open_mock.call_args.args[0]
+        request_body = json.loads(api_request.data)
+        self.assertEqual(result, {"data": {"ok": True}})
+        self.assertEqual(api_request.get_method(), "POST")
+        self.assertEqual(api_request.full_url, f"{broker.API_ROOT}/graphql")
+        self.assertTrue(request_body["query"].lstrip().startswith("query "))
+        self.assertNotIn("mutation", request_body["query"].lower())
+        self.assertEqual(request_body["variables"], variables)
 
     def test_machine_manifest_schema_matches_runtime_contract(self) -> None:
         schema = json.loads(
@@ -936,16 +1027,20 @@ class AuthorizationBrokerTests(unittest.TestCase):
             result["recovery"]["verification_state"], "VERIFIED_COMMITTED"
         )
 
-    def test_verify_rejects_main_tip_that_is_not_exact_merge_commit(self) -> None:
+    def test_verify_rejects_merge_commit_not_in_main_history(self) -> None:
         manifest = build_manifest()
-        client = FakeGitHubClient(manifest, post_merge_branch_sha="5" * 40)
+        client = FakeGitHubClient(
+            manifest,
+            post_merge_branch_sha="5" * 40,
+            compare_status="diverged",
+        )
         client.merged = True
 
         result = broker.verify(manifest, client)
 
         self.assertEqual(result["state"], "RECOVERY_REQUIRED")
         self.assertIn(
-            "merge_commit_not_main_tip", [item["code"] for item in result["errors"]]
+            "merge_commit_not_on_main", [item["code"] for item in result["errors"]]
         )
         self.assertEqual(client.put_calls, [])
 
@@ -992,6 +1087,15 @@ class AuthorizationBrokerTests(unittest.TestCase):
             f"repos/{broker.REPOSITORY}/commits/{MERGE_SHA}/pulls?per_page=100",
             committed.get_calls,
         )
+        self.assertEqual(len(committed.graphql_calls), 1)
+        self.assertEqual(
+            committed.graphql_calls[0][1],
+            {
+                "owner": "Rain3Dmetrology",
+                "name": "github-skill-governance",
+                "number": PR_NUMBER,
+            },
+        )
         self.assertEqual(committed.put_calls, [])
 
         unrelated = FakeGitHubClient(
@@ -1021,6 +1125,41 @@ class AuthorizationBrokerTests(unittest.TestCase):
             [item["code"] for item in duplicate_result["errors"]],
         )
         self.assertEqual(duplicate.put_calls, [])
+
+        missing_graphql_commit = FakeGitHubClient(
+            manifest,
+            pull_merge_commit_sha_missing=True,
+            graphql_merge_sha=None,
+        )
+        missing_graphql_commit.merged = True
+        missing_result = broker.verify(manifest, missing_graphql_commit)
+        self.assertEqual(missing_result["state"], "RECOVERY_REQUIRED")
+        self.assertIn(
+            "graphql_merge_evidence_invalid",
+            [item["code"] for item in missing_result["errors"]],
+        )
+        self.assertEqual(missing_graphql_commit.put_calls, [])
+
+    def test_verify_survives_later_main_descendant(self) -> None:
+        manifest = build_manifest()
+        committed = FakeGitHubClient(
+            manifest,
+            pull_merge_commit_sha_missing=True,
+            post_merge_branch_sha=DESCENDANT_SHA,
+            compare_status="ahead",
+        )
+        committed.merged = True
+
+        result = broker.verify(manifest, committed)
+
+        self.assertEqual(result["state"], "VERIFIED_COMMITTED")
+        self.assertEqual(result["receipt"]["merge_commit_sha"], MERGE_SHA)
+        self.assertIn(
+            f"repos/{broker.REPOSITORY}/compare/{MERGE_SHA}..."
+            f"{broker.DEFAULT_BRANCH}?per_page=1",
+            committed.get_calls,
+        )
+        self.assertEqual(committed.put_calls, [])
 
     def test_workflow_sha_must_be_current_expected_base_sha(self) -> None:
         with self.assertRaises(broker.BrokerFailure) as raised:
@@ -1070,6 +1209,7 @@ class AuthorizationBrokerTests(unittest.TestCase):
         self.assertNotIn("Authorization", rendered)
         self.assertNotIn(str(ROOT), rendered)
         self.assertFalse(hasattr(broker, "subprocess"))
+
 
 if __name__ == "__main__":
     unittest.main()

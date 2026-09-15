@@ -50,6 +50,26 @@ MERGE_METHOD = "squash"
 EVENT = "workflow_dispatch"
 API_ROOT = "https://api.github.com"
 API_VERSION = "2026-03-10"
+MERGE_COMMIT_QUERY = """
+query BrokerMergeCommit($owner: String!, $name: String!, $number: Int!) {
+  repository(owner: $owner, name: $name) {
+    databaseId
+    nameWithOwner
+    pullRequest(number: $number) {
+      number
+      state
+      merged
+      mergedAt
+      baseRefName
+      baseRefOid
+      headRefOid
+      baseRepository { databaseId nameWithOwner }
+      headRepository { databaseId nameWithOwner }
+      mergeCommit { oid parents(first: 2) { nodes { oid } } }
+    }
+  }
+}
+""".strip()
 
 SHA_RE = re.compile(r"[0-9a-f]{40}\Z")
 CHECK_DETAILS_RE = re.compile(
@@ -102,6 +122,11 @@ class GitHubApiClient:
 
     def get(self, endpoint: str) -> object:
         return self._request("GET", endpoint)
+
+    def graphql(self, query: str, variables: dict[str, object]) -> object:
+        return self._request(
+            "POST", "graphql", {"query": query, "variables": variables}
+        )
 
     def put(self, endpoint: str, body: dict[str, object]) -> object:
         return self._request("PUT", endpoint, body)
@@ -897,6 +922,7 @@ def _validate_merge_commit_association(
     pr_number: int,
     expected_base_sha: str,
     expected_head_sha: str,
+    expected_merged_at: str,
 ) -> None:
     associations = _list(payload, code="merge_commit_association_invalid")
     matches = 0
@@ -913,7 +939,7 @@ def _validate_merge_commit_association(
         if (
             pull.get("number") == pr_number
             and pull.get("state") == "closed"
-            and isinstance(pull.get("merged_at"), str)
+            and pull.get("merged_at") == expected_merged_at
             and base.get("ref") == DEFAULT_BRANCH
             and base.get("sha") == expected_base_sha
             and head.get("sha") == expected_head_sha
@@ -944,6 +970,100 @@ def _read_main_sha(client: object) -> str:
             "branch_evidence_invalid", "The main branch commit is invalid."
         )
     return branch_sha
+
+
+def _read_graphql_merge_sha(
+    client: object,
+    *,
+    pr_number: int,
+    expected_base_sha: str,
+    expected_head_sha: str,
+    expected_merged_at: str,
+) -> str:
+    owner, name = REPOSITORY.split("/", 1)
+    payload = _mapping(
+        client.graphql(
+            MERGE_COMMIT_QUERY,
+            {"owner": owner, "name": name, "number": pr_number},
+        ),
+        code="graphql_merge_evidence_invalid",
+    )
+    if payload.get("errors") not in (None, []):
+        raise BrokerFailure(
+            "graphql_merge_evidence_invalid",
+            "GitHub GraphQL did not return exact merge evidence.",
+        )
+    data = _mapping(payload.get("data"), code="graphql_merge_evidence_invalid")
+    repository = _mapping(
+        data.get("repository"), code="graphql_merge_evidence_invalid"
+    )
+    pull = _mapping(
+        repository.get("pullRequest"), code="graphql_merge_evidence_invalid"
+    )
+    base_repo = _mapping(
+        pull.get("baseRepository"), code="graphql_merge_evidence_invalid"
+    )
+    head_repo = _mapping(
+        pull.get("headRepository"), code="graphql_merge_evidence_invalid"
+    )
+    merge_commit = _mapping(
+        pull.get("mergeCommit"), code="graphql_merge_evidence_invalid"
+    )
+    parents = _mapping(
+        merge_commit.get("parents"), code="graphql_merge_evidence_invalid"
+    )
+    parent_nodes = _list(
+        parents.get("nodes"), code="graphql_merge_evidence_invalid"
+    )
+    exact_identity = (
+        repository.get("databaseId") == REPOSITORY_ID
+        and repository.get("nameWithOwner") == REPOSITORY
+        and pull.get("number") == pr_number
+        and pull.get("state") == "MERGED"
+        and pull.get("merged") is True
+        and pull.get("mergedAt") == expected_merged_at
+        and pull.get("baseRefName") == DEFAULT_BRANCH
+        and pull.get("baseRefOid") == expected_base_sha
+        and pull.get("headRefOid") == expected_head_sha
+        and base_repo.get("databaseId") == REPOSITORY_ID
+        and base_repo.get("nameWithOwner") == REPOSITORY
+        and head_repo.get("databaseId") == REPOSITORY_ID
+        and head_repo.get("nameWithOwner") == REPOSITORY
+        and len(parent_nodes) == 1
+        and isinstance(parent_nodes[0], dict)
+        and parent_nodes[0].get("oid") == expected_base_sha
+    )
+    merge_sha = merge_commit.get("oid")
+    if (
+        not exact_identity
+        or not isinstance(merge_sha, str)
+        or not SHA_RE.fullmatch(merge_sha)
+    ):
+        raise BrokerFailure(
+            "graphql_merge_evidence_invalid",
+            "GitHub GraphQL did not return exact merge evidence.",
+        )
+    return merge_sha
+
+
+def _validate_merge_commit_on_main(payload: object, *, merge_sha: str) -> None:
+    comparison = _mapping(payload, code="merge_commit_ancestry_invalid")
+    base_commit = _mapping(
+        comparison.get("base_commit"), code="merge_commit_ancestry_invalid"
+    )
+    merge_base = _mapping(
+        comparison.get("merge_base_commit"), code="merge_commit_ancestry_invalid"
+    )
+    if (
+        comparison.get("status") not in {"ahead", "identical"}
+        or comparison.get("behind_by") != 0
+        or base_commit.get("sha") != merge_sha
+        or merge_base.get("sha") != merge_sha
+    ):
+        raise BrokerFailure(
+            "merge_commit_not_on_main",
+            "The exact merge commit is not in the current main branch history.",
+        )
 
 
 def _verify_exact_effect(
@@ -981,15 +1101,19 @@ def _verify_exact_effect(
         )
     if pull.get("merged") is True:
         merge_sha = pull.get("merge_commit_sha")
-        if (
-            pull.get("state") != "closed"
-            or not isinstance(pull.get("merged_at"), str)
-        ):
+        merged_at = pull.get("merged_at")
+        if pull.get("state") != "closed" or not isinstance(merged_at, str):
             raise BrokerFailure(
                 "effect_evidence_invalid", "The merge effect cannot be proven from readback."
             )
         if merge_sha is None:
-            merge_sha = _read_main_sha(client)
+            merge_sha = _read_graphql_merge_sha(
+                client,
+                pr_number=pr_number,
+                expected_base_sha=expected_base_sha,
+                expected_head_sha=expected_head_sha,
+                expected_merged_at=merged_at,
+            )
             _validate_merge_commit_association(
                 client.get(
                     f"repos/{REPOSITORY}/commits/{merge_sha}/pulls?per_page=100"
@@ -997,6 +1121,7 @@ def _verify_exact_effect(
                 pr_number=pr_number,
                 expected_base_sha=expected_base_sha,
                 expected_head_sha=expected_head_sha,
+                expected_merged_at=merged_at,
             )
         elif not isinstance(merge_sha, str) or not SHA_RE.fullmatch(merge_sha):
             raise BrokerFailure(
@@ -1023,10 +1148,17 @@ def _verify_exact_effect(
                 "merge_base_not_exact",
                 "The squash merge was not created from the authorized base commit.",
             )
-        if _read_main_sha(client) != merge_sha:
+        main_sha = _read_main_sha(client)
+        _validate_merge_commit_on_main(
+            client.get(
+                f"repos/{REPOSITORY}/compare/{merge_sha}...{DEFAULT_BRANCH}?per_page=1"
+            ),
+            merge_sha=merge_sha,
+        )
+        if _read_main_sha(client) != main_sha:
             raise BrokerFailure(
-                "merge_commit_not_main_tip",
-                "The exact merge commit is not the current main branch tip.",
+                "main_changed_during_verification",
+                "The main branch changed during effect verification.",
             )
         return "VERIFIED_COMMITTED", merge_sha
     if pull.get("merged") is not False or pull.get("state") != "open":
