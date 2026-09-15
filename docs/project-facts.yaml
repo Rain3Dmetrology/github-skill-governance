@@ -4,7 +4,7 @@ project:
   slug: github-skill-governance
   owner: Rain3Dmetrology
   repository: https://github.com/Rain3Dmetrology/github-skill-governance
-  status: p1-platform-enforcement-enforced
+  status: p2-bilingual-readme-skill-implemented
   default_locale: en
 
 value_proposition:
@@ -21,4 +21,5 @@ current_capabilities:
   github_platform_enforcement: enforced
   c_authorization_broker: active-canary-verified-single-owner-not-production-c
   release_automation: disabled
-  host_distribution: not-implemented
+  bilingual_readme_skill: implemented-readonly-and-pr-scoped
+  host_distribution: codex-and-claude-directory-layout-smoke-tested-not-live-host-attested

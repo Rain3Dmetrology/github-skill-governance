@@ -11,7 +11,8 @@
 > 当前状态：**P1 平台强制已生效**。GitHub 回读与被阻断的负向 PR 已证明
 > required check、main 保护和全标签冻结。受保护的 `c-authorization`
 > Environment 与 Broker 工作流已启用，远端 canary 已证明受测的一次性路由；
-> 但它还不是独占、独立的生产级 C 边界，发布权仍禁用。
+> 但它还不是独占、独立的生产级 C 边界。P2 双语 README Skill 已作为离线、
+> read-first 工具封装，发布权仍禁用。
 
 <!-- readme-contract:section:why-this-repo -->
 ## 为什么选择这个仓库
@@ -41,12 +42,17 @@ P5 前均被冻结。该状态不向任何 Skill 授予常驻变更权或发布�
 仓库现已包含生效的单路由 C 授权契约与精确 squash merge 执行器。远端
 canary 已证明受测行为；单一所有者身份与非独占 main 路由仍是生产级 C
 声明的明确阻塞项。
+
+<!-- readme-contract:claim:claim.p2-bilingual-readme-skill -->
+自包含的 `bilingual-readme-governance` Skill 可离线校验本仓库及任意沙箱仓库
+的双语 README，输出不修改目标的修复计划，并把语义真实性审核与结构合规
+明确分开。
 <!-- /readme-contract:section:why-this-repo -->
 
 <!-- readme-contract:section:quick-start -->
 ## 快速开始
 
-P1 是已生效的治理强制，不是安装器或发布器：
+P1 是已生效的治理强制，P2 新增一个离线 Skill，而不是发布器：
 
 ```text
 1. 运行：python3 -m unittest discover -s tests -p 'test_*.py'
@@ -55,6 +61,7 @@ P1 是已生效的治理强制，不是安装器或发布器：
 4. 查看：python3 scripts/c_authorization_broker.py --help
 5. 修改已生效控制前审核 docs/P1_C_BROKER_ACCEPTANCE.md
 6. 按 docs/runbooks/C_AUTHORIZATION_BROKER.md 操作；恢复态绝不重试
+7. 运行：python3 -I skills/bilingual-readme-governance/scripts/readme_governance.py validate --root .
 ```
 
 不要从该 revision 安装 AI 审查器或启用发布自动化。
@@ -83,7 +90,7 @@ P1 是已生效的治理强制，不是安装器或发布器：
 |---|---|
 | Broker 不是独占 `main` 路由且共用一个所有者身份 | 它是受测的确认机制，不是所有者 Token 失陷防线 |
 | 发布自动化被禁用 | 尚无受支持的 tag 或 GitHub Release 路径 |
-| 没有宿主 adapter 与 smoke test | 当前不声称已验证任何智能体平台 |
+| 尚未证明真实宿主调用 | 目录布局 canary 已通过，但不声称覆盖所有 Codex 或 Claude 产品版本 |
 | 只有一名维护者负责审查 | CODEOWNERS 可以路由审查，但不能提供独立批准 |
 <!-- /readme-contract:section:current-limitations -->
 
@@ -94,7 +101,7 @@ P1 是已生效的治理强制，不是安装器或发布器：
 |---|---|---|---|
 | Broker 身份与路由不独立 | 智能体凭据保持任务级；不得称其为生产级 C 边界 | 专用最小权限 GitHub App、独立审批者、`prevent_self_review=true` 与服务端独占路由 | 远端 canary 已通过；Issue #1 仍开放 |
 | 没有发布路径 | 不创建 tag 或 Release | P5 Draft-first 发布 Saga | 策略禁用 |
-| 没有已验证宿主 | 不声明平台兼容性 | P6 exact-SHA 双宿主 canary | 未开始 |
+| 尚未证明真实宿主调用 | 直接使用离线命令 | 在不授予凭据的前提下增加产品版本 canary | 目录布局烟测已通过 |
 | 没有独立审查者 | 如实记录维护者自审，审批数保持为 0 | 强制独立批准前先增加第二名可信人类 | 开放限制 |
 
 后续功能在实施前必须先建立 GitHub Issue；在此之前不会包装成已交付能力。
@@ -103,8 +110,9 @@ P1 是已生效的治理强制，不是安装器或发布器：
 <!-- readme-contract:section:compatibility -->
 ## 兼容性
 
-P1 不验证任何运行时或智能体宿主。未来包格式采用开放 Agent Skills 目录约定，
-但兼容性声明必须有固定 revision 的安装结果和 smoke-test 回执。
+该包遵循 Agent Skills 目录约定并通过结构校验。精确包内容已分别复制到隔离的
+Codex 风格和 Claude 风格 Skill 目录并成功执行；这证明路径可移植性，不证明
+真实产品调用或所有宿主版本兼容。
 <!-- /readme-contract:section:compatibility -->
 
 <!-- readme-contract:section:evidence -->
@@ -119,6 +127,7 @@ P1 不验证任何运行时或智能体宿主。未来包格式采用开放 Agen
 | `claim.p1-platform-enforcement` | `P1_ACCEPTANCE.md`、ADR-0008、远端 active 回执 |
 | `claim.c-authorization-broker-bootstrap` | Broker schema、执行器、标准工作流、runbook、`P1_C_BROKER_ACCEPTANCE.md`、ADR-0009、威胁模型 |
 | `claim.p0-alternatives-comparison` | `P0_ALTERNATIVES.md`，评估于 2026-08-30 |
+| `claim.p2-bilingual-readme-skill` | Skill 包、离线校验器、P2 验收、跨仓库与目录布局 canary、ADR-0010 |
 
 机器可读声明映射位于 [`docs/claims.yaml`](./docs/claims.yaml)。
 <!-- /readme-contract:section:evidence -->
@@ -131,11 +140,11 @@ P1 不验证任何运行时或智能体宿主。未来包格式采用开放 Agen
 | P0 | 已授权仓库 bootstrap | 许可证、版本权威、README 契约和 R/W/C 权限冻结 |
 | P1 | P0 验收 | GitHub 平台强制与最小权限检查；已验收 |
 | P1-C | P1 已强制 | 单所有者路由已通过 canary；独立身份与独占路由仍阻塞生产封板 |
-| P2a | P1-C 已验证 | 确定性跨仓库双语 README Skill，默认 dry-run、仅 PR |
+| P2a | P1-C canary 已验证 | 确定性跨仓库双语 README Skill；已实现离线、read-first 与 PR-scoped 路由 |
 | P2b+ | P2a 已有证据 | 发布状态与分发校验器，再进入 Core Skills 与发布 Saga |
 
-P0 与 P1 平台强制已验收。P1-C 已通过 canary 但未达到生产封板；P2 及以后
-仍是决策 Gate，不是交付声明。
+P0 与 P1 平台强制已验收。P1-C 已通过 canary 但未达到生产封板；P2a 已有
+本地与目录布局证据，P2b 及以后仍是决策 Gate，不是交付声明。
 <!-- /readme-contract:section:roadmap -->
 
 <!-- readme-contract:section:security -->

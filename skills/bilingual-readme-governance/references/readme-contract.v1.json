@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "locales": {
+    "en": "README.md",
+    "zh-CN": "README.zh-CN.md"
+  },
+  "requiredSections": [
+    "language-switch",
+    "value-proposition",
+    "why-this-repo",
+    "quick-start",
+    "comparison-and-tradeoffs",
+    "current-limitations",
+    "mitigations",
+    "compatibility",
+    "evidence",
+    "roadmap",
+    "security",
+    "license"
+  ],
+  "style": {
+    "languageSwitchWithinFirstNonEmptyLines": 6,
+    "valueSentenceWithinFirstNonEmptyLines": 12,
+    "englishValueSentenceMaxWords": 25,
+    "chineseValueSentenceMaxCharacters": 45
+  },
+  "policies": {
+    "reciprocalLanguageLinksRequired": true,
+    "sectionIdParityRequired": true,
+    "claimIdParityRequired": true,
+    "localLinksBlocking": true,
+    "externalLinksChecked": false,
+    "comparisonDateAndEvidenceRequired": true,
+    "limitationsAndMitigationsTablesRequired": true,
+    "semanticReviewRequired": true,
+    "extraPairedSectionsAllowed": true
+  }
+}

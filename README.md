@@ -13,7 +13,8 @@ Skill receives GitHub write or release authority.
 > negative PR prove the required check, main protection, and all-tag freeze.
 > The protected `c-authorization` Environment and Broker workflow are active;
 > remote canaries proved the tested one-shot route. It is not yet an exclusive,
-> independent production C boundary. Release authority remains disabled.
+> independent production C boundary. The P2 bilingual README Skill is packaged
+> as an offline, read-first tool; Release authority remains disabled.
 
 <!-- readme-contract:section:why-this-repo -->
 ## Why this repository
@@ -50,12 +51,18 @@ The repository contains an active one-route C-authorization contract and
 exact-squash executor. Remote canaries prove its tested behavior, while the
 single-owner identity and non-exclusive main route remain explicit blockers to
 a production C-grade claim.
+
+<!-- readme-contract:claim:claim.p2-bilingual-readme-skill -->
+The self-contained `bilingual-readme-governance` Skill validates this README
+pair and arbitrary sandbox repositories offline, emits a non-mutating
+remediation plan, and keeps semantic truth review separate from structural
+conformance.
 <!-- /readme-contract:section:why-this-repo -->
 
 <!-- readme-contract:section:quick-start -->
 ## Quick start
 
-P1 is enforced governance, not an installer or publisher:
+P1 is enforced governance and P2 adds one offline Skill, not a publisher:
 
 ```text
 1. Run: python3 -m unittest discover -s tests -p 'test_*.py'
@@ -64,6 +71,7 @@ P1 is enforced governance, not an installer or publisher:
 4. Inspect: python3 scripts/c_authorization_broker.py --help
 5. Review docs/P1_C_BROKER_ACCEPTANCE.md before changing enforced controls
 6. Follow docs/runbooks/C_AUTHORIZATION_BROKER.md; never retry a recovery state
+7. Run: python3 -I skills/bilingual-readme-governance/scripts/readme_governance.py validate --root .
 ```
 
 Do not install an AI reviewer or enable release automation from this revision.
@@ -93,7 +101,7 @@ failure-scenario reference, not a dependency or production release executor.
 |---|---|
 | Broker is not the exclusive `main` route and uses one owner identity | It is a tested confirmation mechanism, not protection against owner-token compromise |
 | Release automation is disabled | There is no supported tag or GitHub Release path yet |
-| Host adapters and smoke tests are absent | No agent platform is currently claimed as verified |
+| Live host invocation is not attested | Directory-layout canaries passed, but no claim is made about every Codex or Claude product version |
 | One maintainer owns review | CODEOWNERS routes review but cannot provide independent approval |
 <!-- /readme-contract:section:current-limitations -->
 
@@ -104,7 +112,7 @@ failure-scenario reference, not a dependency or production release executor.
 |---|---|---|---|
 | Broker identity and route are not independent | Keep agent credentials task-scoped; do not call this a production C boundary | Dedicated least-privilege GitHub App, separate approver, `prevent_self_review=true`, and server-side exclusive routing | Remote canaries passed; Issue #1 remains open |
 | No release path | Do not create tags or Releases | P5 Draft-first release Saga | Disabled by policy |
-| No verified hosts | Do not claim platform compatibility | P6 exact-SHA two-host canary | Not started |
+| Live host invocation not attested | Use the standalone offline command | Add product-version canaries without giving the Skill credentials | Directory-layout smoke tests passed |
 | No independent reviewer | Record maintainer self-review honestly; require zero approvals | Add a second trusted human before enforcing independent approval | Open limitation |
 
 Future work will receive GitHub issues before implementation; until then it is
@@ -114,9 +122,10 @@ not presented as a shipped capability.
 <!-- readme-contract:section:compatibility -->
 ## Compatibility
 
-No runtime or agent host is verified in P1. The planned package format is the
-open Agent Skills directory convention, but compatibility claims require an
-exact-revision install and smoke-test receipt.
+The package follows the Agent Skills directory convention and passes the
+bundled structural validator. Exact package content was copied into isolated
+Codex-style and Claude-style Skill directories and executed there; this proves
+path portability, not live product invocation or universal host compatibility.
 <!-- /readme-contract:section:compatibility -->
 
 <!-- readme-contract:section:evidence -->
@@ -131,6 +140,7 @@ exact-revision install and smoke-test receipt.
 | `claim.p1-platform-enforcement` | `P1_ACCEPTANCE.md`, ADR-0008, active remote receipt |
 | `claim.c-authorization-broker-bootstrap` | Broker schema, executor, canonical workflow, runbook, `P1_C_BROKER_ACCEPTANCE.md`, ADR-0009, threat model |
 | `claim.p0-alternatives-comparison` | `P0_ALTERNATIVES.md`, assessed 2026-08-30 |
+| `claim.p2-bilingual-readme-skill` | Packaged Skill, offline validator, P2 acceptance, cross-repository and directory-layout canaries, ADR-0010 |
 
 Machine-readable claim mapping lives in [`docs/claims.yaml`](./docs/claims.yaml).
 <!-- /readme-contract:section:evidence -->
@@ -143,12 +153,12 @@ Machine-readable claim mapping lives in [`docs/claims.yaml`](./docs/claims.yaml)
 | P0 | Repository bootstrap authorized | License, version authority, README contract, and R/W/C boundaries frozen |
 | P1 | P0 accepted | GitHub platform enforcement and least-privilege checks; accepted |
 | P1-C | P1 enforced | Canary-verified single-owner route; independent identity and exclusive routing still block production closure |
-| P2a | P1-C verified | Deterministic cross-repository bilingual README Skill, dry-run and PR-only |
+| P2a | P1-C canary verified | Deterministic cross-repository bilingual README Skill; implemented offline, read-first, and PR-scoped |
 | P2b+ | P2a evidence exists | Release-state and distribution validators, then Core Skills and release Saga |
 
 P0 and P1 platform enforcement are accepted. P1-C is canary-verified but not
-production-closed; P2 and later phases remain decision gates, not delivery
-claims.
+production-closed; P2a is implemented with local and directory-layout evidence.
+P2b and later phases remain decision gates, not delivery claims.
 <!-- /readme-contract:section:roadmap -->
 
 <!-- readme-contract:section:security -->
