@@ -1,0 +1,4 @@
+interface:
+  display_name: "Bilingual README Governance"
+  short_description: "Validate and plan trustworthy bilingual repository READMEs"
+  default_prompt: "Use $bilingual-readme-governance to audit this repository README pair and generate a safe remediation plan."

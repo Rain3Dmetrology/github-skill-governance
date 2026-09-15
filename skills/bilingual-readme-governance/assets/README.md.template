@@ -1,0 +1,78 @@
+# {{PROJECT_NAME}}
+
+<!-- readme-contract:section:language-switch -->
+English | [简体中文](./README.zh-CN.md)
+<!-- /readme-contract:section:language-switch -->
+
+<!-- readme-contract:section:value-proposition -->
+{{ONE_SENTENCE_MAXIMUM_VALUE}}
+<!-- /readme-contract:section:value-proposition -->
+
+<!-- readme-contract:section:why-this-repo -->
+## Why this repository
+
+{{EVIDENCE_BACKED_REASON_TO_CHOOSE}}
+<!-- /readme-contract:section:why-this-repo -->
+
+<!-- readme-contract:section:quick-start -->
+## Quick start
+
+{{MINIMUM_WORKING_STEPS}}
+<!-- /readme-contract:section:quick-start -->
+
+<!-- readme-contract:section:comparison-and-tradeoffs -->
+## Comparison and trade-offs
+
+Assessment date: {{YYYY-MM-DD}}. Evidence: [comparison basis]({{LOCAL_EVIDENCE_PATH}}).
+
+| Approach | Advantage | Disadvantage | Choose when |
+|---|---|---|---|
+| This project | {{ADVANTAGE}} | {{DISADVANTAGE}} | {{FIT}} |
+| Alternative | {{ADVANTAGE}} | {{DISADVANTAGE}} | {{FIT}} |
+<!-- /readme-contract:section:comparison-and-tradeoffs -->
+
+<!-- readme-contract:section:current-limitations -->
+## Current limitations
+
+| Limitation | User impact |
+|---|---|
+| {{LIMITATION}} | {{IMPACT}} |
+<!-- /readme-contract:section:current-limitations -->
+
+<!-- readme-contract:section:mitigations -->
+## Mitigations
+
+| Limitation | Current mitigation | Permanent path | Status |
+|---|---|---|---|
+| {{LIMITATION}} | {{MITIGATION}} | {{PLAN}} | {{STATUS}} |
+<!-- /readme-contract:section:mitigations -->
+
+<!-- readme-contract:section:compatibility -->
+## Compatibility
+
+{{VERIFIED_COMPATIBILITY_ONLY}}
+<!-- /readme-contract:section:compatibility -->
+
+<!-- readme-contract:section:evidence -->
+## Evidence
+
+- [Verification evidence]({{LOCAL_EVIDENCE_PATH}})
+<!-- /readme-contract:section:evidence -->
+
+<!-- readme-contract:section:roadmap -->
+## Roadmap
+
+{{DELIVERED_VS_PLANNED_STATES}}
+<!-- /readme-contract:section:roadmap -->
+
+<!-- readme-contract:section:security -->
+## Security
+
+{{SECURITY_REPORTING_AND_BOUNDARIES}}
+<!-- /readme-contract:section:security -->
+
+<!-- readme-contract:section:license -->
+## License
+
+See [LICENSE](./LICENSE). Preserve all existing attribution and notices.
+<!-- /readme-contract:section:license -->

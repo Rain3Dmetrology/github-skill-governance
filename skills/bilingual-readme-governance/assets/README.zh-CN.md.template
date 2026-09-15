@@ -1,0 +1,78 @@
+# {{项目名称}}
+
+<!-- readme-contract:section:language-switch -->
+[English](./README.md) | 简体中文
+<!-- /readme-contract:section:language-switch -->
+
+<!-- readme-contract:section:value-proposition -->
+{{一句话最大价值}}
+<!-- /readme-contract:section:value-proposition -->
+
+<!-- readme-contract:section:why-this-repo -->
+## 为什么选择这个仓库
+
+{{有证据支撑的选择理由}}
+<!-- /readme-contract:section:why-this-repo -->
+
+<!-- readme-contract:section:quick-start -->
+## 快速开始
+
+{{最短可用步骤}}
+<!-- /readme-contract:section:quick-start -->
+
+<!-- readme-contract:section:comparison-and-tradeoffs -->
+## 对比与取舍
+
+评估日期：{{YYYY-MM-DD}}。证据：[对比依据]({{本地证据路径}})。
+
+| 方案 | 优势 | 劣势 | 适用条件 |
+|---|---|---|---|
+| 本项目 | {{优势}} | {{劣势}} | {{适用条件}} |
+| 替代方案 | {{优势}} | {{劣势}} | {{适用条件}} |
+<!-- /readme-contract:section:comparison-and-tradeoffs -->
+
+<!-- readme-contract:section:current-limitations -->
+## 当前限制
+
+| 限制 | 用户影响 |
+|---|---|
+| {{限制}} | {{影响}} |
+<!-- /readme-contract:section:current-limitations -->
+
+<!-- readme-contract:section:mitigations -->
+## 弥补措施
+
+| 限制 | 当前措施 | 长期方案 | 状态 |
+|---|---|---|---|
+| {{限制}} | {{弥补措施}} | {{计划}} | {{状态}} |
+<!-- /readme-contract:section:mitigations -->
+
+<!-- readme-contract:section:compatibility -->
+## 兼容性
+
+{{仅写已验证的兼容性}}
+<!-- /readme-contract:section:compatibility -->
+
+<!-- readme-contract:section:evidence -->
+## 证据
+
+- [验证证据]({{本地证据路径}})
+<!-- /readme-contract:section:evidence -->
+
+<!-- readme-contract:section:roadmap -->
+## 路线图
+
+{{区分已交付与计划状态}}
+<!-- /readme-contract:section:roadmap -->
+
+<!-- readme-contract:section:security -->
+## 安全
+
+{{安全报告方式与边界}}
+<!-- /readme-contract:section:security -->
+
+<!-- readme-contract:section:license -->
+## 许可证
+
+参见 [LICENSE](./LICENSE)，并保留现有署名与通知。
+<!-- /readme-contract:section:license -->

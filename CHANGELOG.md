@@ -21,6 +21,9 @@ release-please after the P5 release path is accepted.
   Skills and Anthropic's AI-Native SDLC loop, with a canonical domain glossary.
 - Canonical two-job C Broker workflow candidate and no-retry operator runbook
   for one Environment-approved exact squash merge.
+- Self-contained `bilingual-readme-governance` Skill with an offline validator,
+  read-only remediation planner, paired drafting templates, and two-layout
+  portability canaries.
 
 ### Changed
 
