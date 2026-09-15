@@ -63,7 +63,7 @@ Receipts are typed and kept separate:
 | Check spoofing | Match required check name, success state, exact head SHA, App ID `15368`, job/run identity, canonical workflow ID/path, and `pull_request` event; refuse PR changes under `.github/` or `scripts/` | `ABORTED_PRE_EFFECT` |
 | Secret or token disclosure | No Secret; never print token or authorization header; receipts contain no local absolute path | test/validator failure |
 | Ambiguous mutation response | One mutation attempt, then read-only reconciliation; no automatic retry | `RECOVERY_REQUIRED` |
-| Merged PR omits `merge_commit_sha` | Use `main` only as a candidate; require one exact GitHub commit-to-PR association, authorized base/head identity, sole-parent topology, and current-tip equality | `VERIFIED_COMMITTED` or `RECOVERY_REQUIRED` |
+| Merged PR omits `merge_commit_sha` | Read GraphQL `PullRequest.mergeCommit`; require one exact REST commit-to-PR association, authorized base/head identity, sole-parent topology, current-`main` ancestry, and a stable verification snapshot | `VERIFIED_COMMITTED` or `RECOVERY_REQUIRED` |
 | Environment drift | Exact API readback plus manual administrator-bypass assertion before workflow activation | activation blocked |
 | Missing Environment auto-created unprotected | Broker workflow remains absent until protected Environment exists | activation blocked |
 | Owner account compromise | Same identity can dispatch, approve, and ordinarily merge; short TTL and exact digest do not create identity separation | production blocked |

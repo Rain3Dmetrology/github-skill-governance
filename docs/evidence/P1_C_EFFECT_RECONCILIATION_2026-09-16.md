@@ -43,19 +43,45 @@ GitHub's published
 does not document this field behavior, so the evidence establishes observed
 API behavior, not a claimed platform guarantee.
 
+## Durability regression found after PR #18
+
+PR #18 implemented a fail-closed correction that used the current `main` tip
+as the null-SHA candidate. Its exact-head squash result was
+`a043db402b1ace01f51dba428079440911b3d677`, with the PR #17 squash as its sole
+parent. The new-main CI run
+[34995347106](https://github.com/Rain3Dmetrology/github-skill-governance/actions/runs/34995347106)
+passed.
+
+The mandatory post-merge replay then returned
+`merge_commit_association_invalid`: the current tip was now PR #18 rather than
+PR #17. No mutation was attempted. This proves that a tip-only fallback was
+safe but not durable after later commits, so PR #18 was insufficient.
+
+A live GraphQL query provided the immutable PR #17 `mergeCommit` SHA, exact
+base/head OIDs, repository identity, merged state, and sole parent. A live REST
+compare then proved that commit remained an ancestor of the new `main` with
+`status: ahead`, `behind_by: 0`, and the merge commit as the merge base.
+
 ## Correction
 
-The Broker remains pinned to `2026-03-10`. When and only when an otherwise
+The REST Broker remains pinned to `2026-03-10`. When and only when an otherwise
 valid merged pull omits `merge_commit_sha`, read-only verification now:
 
-1. reads the current `main` tip as the candidate effect;
-2. calls GitHub's read-only
+1. reads GitHub GraphQL
+   [`PullRequest.mergeCommit`](https://docs.github.com/en/graphql/reference/pulls#pullrequest)
+   with the exact repository and PR number;
+2. requires the GraphQL PR, repository, base/head OIDs, merged state, merge
+   commit, and sole parent to match the authorization;
+3. calls GitHub's read-only
    [list-pulls-associated-with-commit endpoint](https://docs.github.com/en/rest/commits/commits#list-pull-requests-associated-with-a-commit);
-3. requires exactly one association matching the authorized PR number,
+4. requires exactly one association matching the authorized PR number,
    repository IDs, base ref/SHA, head SHA, closed state, and merge timestamp;
-4. verifies the candidate commit has exactly one parent equal to the
+5. independently verifies the commit has exactly one parent equal to the
    authorized base; and
-5. verifies the candidate is still the current `main` tip.
+6. uses GitHub's
+   [compare endpoint](https://docs.github.com/en/rest/commits/commits#compare-two-commits)
+   to prove the commit remains in `main`, then re-reads `main` to reject a
+   changing verification snapshot.
 
 Any missing, duplicate, malformed, or mismatched association stays
 `RECOVERY_REQUIRED`. This adds no mutation path and does not relax the exact
@@ -63,15 +89,17 @@ head, exact base, workflow, check, approval, TTL, or Environment controls.
 
 ## Verification
 
-- 31 Broker tests pass, including positive null-SHA fallback and unrelated-PR
-  rejection.
-- 84 repository tests pass.
+- 33 Broker tests pass, including the fixed GraphQL query transport, positive
+  null-SHA fallback, later-main durability, missing GraphQL evidence,
+  unrelated-PR, and divergent-history rejection.
+- 86 repository tests pass.
 - Governance validation reports zero errors.
-- The corrected local Broker ran `verify` against run `34992442354` and
+- The final corrected local Broker ran `verify` against run `34992442354` after
+  PR #18 advanced `main` and
   returned `VERIFIED_COMMITTED` with the exact base, head, merge SHA, PR, run,
   and repository ID.
 - Tag, Release, repository Secret, Environment Secret, and Environment
-  Variable inventories remained zero after the PR #17 merge.
+  Variable inventories remained zero after the PR #18 merge.
 
 The underlying production blockers remain unchanged: the dispatcher and
 approver share one owner identity, the Broker is not the exclusive `main`

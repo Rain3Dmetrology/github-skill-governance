@@ -88,14 +88,18 @@ pre-activation evidence is recorded in
 - [x] PR #17 exposed a second `RECOVERY_REQUIRED` case under REST API
   `2026-03-10`: the merged pull response had `merge_commit_sha: null` even
   though the merge endpoint returned the exact SHA. No mutation was retried.
-- [x] Read-only reconciliation now falls back to the `main` tip only when the
-  merge SHA is absent, requires GitHub to associate that commit uniquely with
-  the exact authorized PR/base/head, and still proves the exact parent and
-  current branch tip.
+- [x] PR #18 made immediate null-SHA reconciliation exact, but the post-merge
+  replay correctly returned `RECOVERY_REQUIRED` after `main` advanced; its
+  tip-only candidate was therefore insufficient for durable verification.
+- [x] Read-only reconciliation now obtains the immutable merge commit from
+  GraphQL only when the REST field is absent, requires GitHub to associate it
+  uniquely with the exact authorized PR/base/head, proves the exact parent,
+  and proves it remains in a stable current `main` history.
 - [x] Tag count, Release count, repository Secret count, and Environment Secret
   count remain zero.
 - [x] Remote evidence and the first reconciliation hardening were committed by
-  PR #16; the API-version compatibility correction is tracked by its own PR.
+  PR #16; PR #18 recorded the first API-version compatibility correction, and
+  its durable-replay correction is tracked by a follow-up PR.
 - [ ] Issue #1 is closed only after the production blockers below are removed;
   remote canary success alone is insufficient.
 
