@@ -54,6 +54,13 @@ The recovery state was correct because the job could not yet prove the
 effect. The eventual readback delay is addressed by bounded read-only retries;
 the mutation remains one-shot.
 
+Update on 2026-09-16: PR #17 proved that bounded retries alone were not
+sufficient under REST API `2026-03-10`, where an otherwise complete merged-PR
+response returned `merge_commit_sha: null`. The mutation still remained
+one-shot and independent readback proved the commit. The compatibility fix and
+live read-only reconciliation are recorded in
+[`P1_C_EFFECT_RECONCILIATION_2026-09-16.md`](./P1_C_EFFECT_RECONCILIATION_2026-09-16.md).
+
 ## Security conclusion
 
 This canary proves exact digest validation, expiry, replay rejection,

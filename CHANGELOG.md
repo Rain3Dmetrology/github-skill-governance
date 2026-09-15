@@ -27,6 +27,10 @@ release-please after the P5 release path is accepted.
 
 ### Changed
 
+- Reconcile successful squash merges under GitHub REST API `2026-03-10` when
+  the pull response omits `merge_commit_sha`: bind the `main` tip to the exact
+  authorized pull request through GitHub's commit-association endpoint, then
+  retain exact-parent and branch-tip verification.
 - Correct the protected `c-authorization` Environment contract to GitHub's
   minimum enabled wait timer of one minute and require that rule during Broker
   readback.

@@ -85,9 +85,17 @@ pre-activation evidence is recorded in
 - [x] Authorization, execution, and independent verification agree. The first
   in-job readback correctly entered `RECOVERY_REQUIRED` until GitHub's
   eventually consistent state became provable; it was not retried.
+- [x] PR #17 exposed a second `RECOVERY_REQUIRED` case under REST API
+  `2026-03-10`: the merged pull response had `merge_commit_sha: null` even
+  though the merge endpoint returned the exact SHA. No mutation was retried.
+- [x] Read-only reconciliation now falls back to the `main` tip only when the
+  merge SHA is absent, requires GitHub to associate that commit uniquely with
+  the exact authorized PR/base/head, and still proves the exact parent and
+  current branch tip.
 - [x] Tag count, Release count, repository Secret count, and Environment Secret
   count remain zero.
-- [ ] Remote evidence and reconciliation hardening are committed by PR-B2.
+- [x] Remote evidence and the first reconciliation hardening were committed by
+  PR #16; the API-version compatibility correction is tracked by its own PR.
 - [ ] Issue #1 is closed only after the production blockers below are removed;
   remote canary success alone is insufficient.
 
@@ -118,3 +126,6 @@ presented as protection against account compromise.
 
 Remote runs, exact SHAs, and zero-side-effect inventories are recorded in
 [`P1_C_REMOTE_CANARY_2026-09-04.md`](./evidence/P1_C_REMOTE_CANARY_2026-09-04.md).
+The REST API `2026-03-10` compatibility defect and live read-only recovery are
+recorded in
+[`P1_C_EFFECT_RECONCILIATION_2026-09-16.md`](./evidence/P1_C_EFFECT_RECONCILIATION_2026-09-16.md).
