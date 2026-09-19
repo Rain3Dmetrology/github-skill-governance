@@ -3,13 +3,18 @@
 ## Current scope
 
 This repository has accepted P1 platform enforcement and contains governance
-documents, validators, tests, and one read-only CI workflow. PR-B0 also defines
-a dormant, one-route C-authorization executor, but no workflow invokes it and
-the required protected Environment does not yet exist. The repository holds no
-deployment credentials, release credentials, GitHub App keys, production
-tokens, or active write-capable automation. An interactive connector may have
-broader technical capability, but that capability is not standing authority
-delegated to a Skill.
+documents, validators, tests, one read-only CI workflow, and one active,
+Environment-gated C-authorization workflow. The `c-authorization` Environment
+and canonical exact-squash workflow are active, and remote negative, replay,
+and positive canaries have exercised the one-route Broker. The current
+single-owner approval and non-exclusive `main` route remain explicit blockers
+to a production C-grade authorization boundary.
+
+The repository holds no deployment or release credentials, GitHub App keys, or
+production tokens. The Broker receives a job-scoped `GITHUB_TOKEN` only after
+Environment approval and exposes no tag or Release operation. An interactive
+connector may have broader technical capability, but that capability is not
+standing authority delegated to a Skill.
 
 ## Report a vulnerability
 
@@ -39,7 +44,15 @@ Deleting the visible file is not sufficient.
 ## Permission boundary
 
 P1 grants no Skill standing merge, tag, Release, Ruleset, Secret, or deployment
-authority. The dormant merge route is constrained by ADR-0009 and remains
-unusable until the protected Environment, canonical workflow, negative tests,
-and per-action approval loop are activated and verified in separate stages. See
-ADR-0004 and ADR-0005 for the R/W/C and delegation models.
+authority. The active merge route is constrained by ADR-0009: every dispatch
+binds one exact repository, workflow revision, pull request, base, head, check,
+reviewer, approval digest, and expiry before one squash-merge request is
+allowed. It does not create tags or Releases and grants the legacy
+`github-release-management` Skill no authority.
+
+The route is not production-closed while the dispatcher and approver share one
+owner identity, `prevent_self_review` remains false, and ordinary owner merges
+can bypass the Broker. Production closure requires a distinct least-privilege
+identity, independent approval, and exclusive serialization of `main` updates.
+See ADR-0004, ADR-0005, ADR-0009, and `docs/P1_C_BROKER_ACCEPTANCE.md` for the
+R/W/C model, activation evidence, and remaining blockers.
